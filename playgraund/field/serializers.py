@@ -10,7 +10,8 @@ class FieldSerializer(serializers.ModelSerializer):
             'location',
             'price_per_hour',
             'is_active',
-            'created_at'
+            'created_at',
+            'image',
         ]
 
 class FieldCreateSerializer(serializers.ModelSerializer):
@@ -18,6 +19,7 @@ class FieldCreateSerializer(serializers.ModelSerializer):
         model = Field
         fields = [
             'name',
+            'image',
             'location',
             'price_per_hour',
         ]
