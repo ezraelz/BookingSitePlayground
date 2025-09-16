@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'payments',
     'timeslot',
     'users',
+    'subscribers',
     'corsheaders',
     'django_filters',
     'rest_framework',
