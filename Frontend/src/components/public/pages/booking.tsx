@@ -1,6 +1,25 @@
-import React, { useState } from "react";
+import axios from "../../../hooks/api";
+import React, { useEffect, useState } from "react";
+
+interface Field {
+  id: number;
+  name: string;
+  location: string;
+  price_per_hour: string;
+  image: string | null;
+  is_active: boolean;
+}
+
+interface Timeslot {
+  id: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+}
 
 const Booking = () => {
+  const [fields, setFields] = useState<Field[]>([]);
+  const [timeSlots, setTimeSlots] = useState<Timeslot[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -10,6 +29,19 @@ const Booking = () => {
     duration: 1,
   });
 
+  useEffect(()=> {
+    const fetchField = async ()=> {
+      const res = await axios.get<Field[]>(`/field/`);
+      setFields(Array.isArray(res.data) ? res.data : []);
+    }
+    const fetchTimeslot = async ()=> {
+      const res = await axios.get<Timeslot[]>(`/timeslot/`);
+      setTimeSlots(Array.isArray(res.data) ? res.data : []);
+    }
+    fetchTimeslot();
+    fetchField();
+  },[]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -17,8 +49,9 @@ const Booking = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     console.log("Booking submitted:", formData);
-    // TODO: send to Django API
+    
   };
 
   return (
@@ -63,9 +96,9 @@ const Booking = () => {
               required
             >
               <option value="">-- Select a Field --</option>
-              <option value="field1">Green Park Field</option>
-              <option value="field2">City Sports Arena</option>
-              <option value="field3">Community Playground</option>
+              {fields.map((field)=> (
+                <option key={field.id} value={field.id}>{field.name}</option>
+              ))}
             </select>
           </div>
 
@@ -82,15 +115,19 @@ const Booking = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Time</label>
-              <input
-                type="time"
+              <label className="block text-gray-700 font-medium mb-1">Select Time</label>
+              <select
                 name="time"
                 value={formData.time}
                 onChange={handleChange}
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
                 required
-              />
+              >
+                <option value="">-- Select TIme --</option>
+                {timeSlots.map((time)=> (
+                  <option key={time.id} value={time.id}>{time.start_time} - {time.end_time}</option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -9,7 +9,6 @@ class TimeslotSerializer(serializers.ModelSerializer):
             'field',
             'start_time',
             'end_time',
-            'date',
             'is_booked',
         ]
 
