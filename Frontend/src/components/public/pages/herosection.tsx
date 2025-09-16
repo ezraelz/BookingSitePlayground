@@ -1,7 +1,10 @@
 import React from 'react';
 import bg from '../../../assets/images/soccer-afl-01-v1.jpg';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <div
       className="w-full p-16 relative bg-cover bg-center"
@@ -19,6 +22,7 @@ const HeroSection = () => {
           Here to Reserve a playground 
         </p>
         <button 
+          onClick={()=> navigate(`booking/`)}
           className="bg-green-500 
                      hover:bg-green-600 
                     text-white px-6 py-3 
