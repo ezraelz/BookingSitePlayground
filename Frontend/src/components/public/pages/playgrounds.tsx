@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../hooks/api";
+import { useNavigate } from "react-router-dom";
 
 interface Field {
   id: number;
@@ -14,6 +15,7 @@ const Playgrounds: React.FC = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFields = async () => {
@@ -68,7 +70,9 @@ const Playgrounds: React.FC = () => {
                   ? `$${field.price_per_hour}`
                   : "Price not available"}
               </p>
-              <button className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg transition">
+              <button 
+                onClick={() => navigate(`/reserve/${field.id}`)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg transition">
                 Reserve
               </button>
             </div>

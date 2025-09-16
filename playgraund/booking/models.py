@@ -34,7 +34,8 @@ class Booking(models.Model):
         verbose_name=("Time Slot"),
         on_delete=models.CASCADE
     )
-
+    duration = models.IntegerField(("Duration"), default=1)
+    date = models.DateField(("Date"), auto_now=False, auto_now_add=True, null=True)
     status = models.CharField(
         ("Status"),
         max_length=50,

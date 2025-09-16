@@ -11,7 +11,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-black/50"></div>
 
       {/* Content */}
-      <div className="relative  p-8 z-10 flex flex-col items-center justify-center h-full text-center px-4">
+      <div className="relative  p-10 z-10 flex flex-col items-center justify-center h-full text-center px-4">
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 animate-fadeIn">
           Welcome to PlayRent!
         </h1>
@@ -28,7 +28,7 @@ const HeroSection = () => {
         </button>
 
         {/* Scroll down indicator */}
-        <div className="absolute bottom-10 animate-bounce">
+        <div className="absolute bottom-8 animate-bounce">
           <span className="text-white text-2xl">⌄</span>
         </div>
       </div>

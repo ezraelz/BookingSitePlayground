@@ -1,6 +1,6 @@
-import axios from "../../../hooks/api";
-import React, { useEffect, useState } from "react";
-import Playgrounds from "./playgrounds";
+import axios from '../../../hooks/api';
+import React, { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
 
 interface Field {
   id: number;
@@ -18,72 +18,72 @@ interface Timeslot {
   is_active: boolean;
 }
 
-const Booking = () => {
-  const [fields, setFields] = useState<Field[]>([]);
-  const [selectedField, setSelectedField] = useState('');
-  const [timeSlots, setTimeSlots] = useState<Timeslot[]>([]);
-  const [selectedTimeslot, setSelectedTimeslot] = useState('');
-  const [formData, setFormData] = useState({
-    guest_name: "",
-    guest_email: "",
-    guest_phone: '',
-    playground: 1,
-    date: "",
-    time_slot: 1,
-    duration: 1,
-  });
-
-  useEffect(()=> {
-    const fetchField = async ()=> {
-      const res = await axios.get<Field[]>(`/field/`);
-      setFields(Array.isArray(res.data) ? res.data : []);
-    }
-    const fetchTimeslot = async ()=> {
-      const res = await axios.get<Timeslot[]>(`/timeslot/`);
-      setTimeSlots(Array.isArray(res.data) ? res.data : []);
-    }
-    fetchTimeslot();
-    fetchField();
-  },[]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "playground" || name === "time_slot" || name === "duration"
-        ? Number(value)
-        : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      Playground: Number(selectedField),
-      timeSlot: Number(selectedTimeslot)
-    }
-
-    try{
-      await axios.post(`/booking/`, payload);
-
-      setFormData({
+const Reserve = () => {
+    const { id } = useParams();
+    const [fields, setFields] = useState<Field[]>([]);
+    const [timeSlots, setTimeSlots] = useState<Timeslot[]>([]);
+    const [selectedTimeslot, setSelectedTimeslot] = useState('');
+    const [formData, setFormData] = useState({
         guest_name: "",
         guest_email: "",
         guest_phone: '',
-        playground: 1,
+        playground: id,
         date: "",
         time_slot: 1,
-        duration: 1
-      })
-      console.log("Booking submitted:", formData);
-    }catch(err){
-      console.log('error booking', err)
+        duration: 1,
+    });
+
+    useEffect(()=> {
+        const fetchField = async ()=> {
+            const res = await axios.get<Field[]>(`/field/`);
+            setFields(Array.isArray(res.data) ? res.data : []);
+        }
+        const fetchTimeslot = async ()=> {
+            const res = await axios.get<Timeslot[]>(`/timeslot/`);
+            setTimeSlots(Array.isArray(res.data) ? res.data : []);
+        }
+        fetchTimeslot();
+        fetchField();
+    },[]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+        ...prev,
+        [name]: name === "playground" || name === "time_slot" || name === "duration"
+        ? Number(value)
+        : value,
+    }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const payload = {
+        ...formData,
+        Playground: Number(id),
+        timeSlot: Number(selectedTimeslot)
     }
-  };
+
+    try{
+        await axios.post(`/booking/`, payload);
+
+        setFormData({
+            guest_name: "",
+            guest_email: "",
+            guest_phone: "",
+            playground: id,
+            date: "",
+            time_slot: 1,
+            duration: 1
+        })
+        console.log("Booking submitted:", formData);
+        }catch(err){
+        console.log('error booking', err)
+        }
+    };
 
   return (
-    <section className="bg-gray-50 py-12 px-6 lg:px-20">
+     <section className="bg-gray-50 py-12 px-6 lg:px-20">
       <div className="max-w-3xl mx-auto bg-white shadow rounded-2xl p-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
           Book Your Playground
@@ -131,8 +131,8 @@ const Booking = () => {
             <label className="block text-gray-700 font-medium mb-1">Choose Field</label>
             <select
               name="field"
-              value={selectedField}
-              onChange={(e)=> setSelectedField(e.target.value)}
+              value={formData.playground}
+              onChange={handleChange}
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 outline-none"
               required
             >
@@ -195,7 +195,7 @@ const Booking = () => {
         </form>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default Booking;
+export default Reserve
