@@ -1,7 +1,9 @@
+import axios from "../../../hooks/api";
 import React, { useState } from "react";
 import type { FormEvent } from "react";  // type-only import for FormEvent
 import type { IconType } from "react-icons"; // type-only import for IconType
 import { FaFacebookF, FaTwitter, FaInstagram } from "react-icons/fa"; // actual values
+import { toast } from "react-toastify";
 
 const socialIcons: { icon: IconType; link: string }[] = [
   { icon: FaFacebookF, link: "https://facebook.com" },
@@ -9,14 +11,36 @@ const socialIcons: { icon: IconType; link: string }[] = [
   { icon: FaInstagram, link: "https://instagram.com" },
 ];
 
-const Footer: React.FC = () => {
-  const [email, setEmail] = useState("");
+interface Email {
+  email: String;
+}
 
-  const handleSubscribe = (e: FormEvent) => {
+const Footer: React.FC = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+});
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "email"
+        ? (value)
+        : value,
+    }));
+  };
+
+  const handleSubscribe =async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Subscribed with:", email);
-    setEmail("");
-    // TODO: Connect to backend API
+    try{
+      await axios.post<Email>(`/subscribers/`, formData);
+      toast.success("Subscribed successfully!");
+      setFormData({
+        email: '',
+      });
+    } catch (err){
+      toast.error('something went wrong, faild to subscribe!')
+    }
   };
 
   return (
@@ -84,9 +108,10 @@ const Footer: React.FC = () => {
           >
             <input
               type="email"
+              name="email"
               placeholder="Your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               className="px-4 py-2 rounded-lg border border-gray-700 bg-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500"
               required
             />
