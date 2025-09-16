@@ -1,6 +1,7 @@
 import axios from "../../../hooks/api";
 import React, { useEffect, useState } from "react";
 import Playgrounds from "./playgrounds";
+import { toast } from "react-toastify";
 
 interface Field {
   id: number;
@@ -76,9 +77,11 @@ const Booking = () => {
         time_slot: 1,
         duration: 1
       })
+      toast.success("Booking Submitted Successfully!");
       console.log("Booking submitted:", formData);
     }catch(err){
       console.log('error booking', err)
+      toast.error('something went wrong!')
     }
   };
 

@@ -1,6 +1,7 @@
 import axios from '../../../hooks/api';
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'react-toastify';
 
 interface Field {
   id: number;
@@ -32,6 +33,7 @@ const Reserve = () => {
         time_slot: 1,
         duration: 1,
     });
+    const navigate = useNavigate();
 
     useEffect(()=> {
         const fetchField = async ()=> {
@@ -76,9 +78,12 @@ const Reserve = () => {
             time_slot: 1,
             duration: 1
         })
+        toast.success('Reserve request sent successfully! wait for confirmation!');
         console.log("Booking submitted:", formData);
+        navigate(-1);
         }catch(err){
         console.log('error booking', err)
+        toast.error('faild to send reserve request!')
         }
     };
 

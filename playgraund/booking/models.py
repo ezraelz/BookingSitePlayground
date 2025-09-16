@@ -46,7 +46,7 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(("Updated at"), auto_now=True)
 
     class Meta:
-        ordering = ['-time_slot']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.playground.name} {self.time_slot}"

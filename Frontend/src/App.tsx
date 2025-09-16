@@ -4,11 +4,13 @@ import './index.css';
 
 import PublicRoutes from './routes/publicRoutes'
 import BaseLayout from './components/public/layout/baseLayout';
+import { ToastContainer } from 'react-toastify';
 
 function App() {
 
   return (
     <div className="min-h-screen">
+      <ToastContainer position="top-right" autoClose={3000} />
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path='/*' element={<BaseLayout />}>

@@ -8,5 +8,5 @@ class Timeslot(models.Model):
     is_booked = models.BooleanField(("Is Booked"))
 
     def __str__(self):
-        return f"{self.field.name} {self.start_time} {self.end_time}"
+        return f"{self.start_time} {self.end_time}"
     
