@@ -32,4 +32,11 @@ class SubscribersDetailView(APIView):
         field.delete()
         return Response('Field deleted successfully!')
     
-
+class CheckSubscribtion(APIView):
+    def get(self, request):
+        email = request.GET.get('email')
+        if not email:
+            return Response('email required')
+        subscribed = Subscribers.objects.filter(email=email).exists()
+        return Response({'Subscribed!': subscribed})
+    

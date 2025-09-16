@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
+import axios from '../../../hooks/api';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(()=> {
+    const savedEmail = localStorage.getItem('SubscribedEmail');
+    if (savedEmail) {
+      axios.get(`/subscribed/check?email=${savedEmail}`)
+      .then((res)=> {
+        if (res.data.subscribed){
+          setSubscribed(true);
+        }
+      }).catch(()=>{})
+    }
+  }, []);
 
   const tabs = [
     { name: 'Home', path: '/' },
@@ -48,16 +62,20 @@ const Nav = () => {
         ))}
       </div>
 
-      {/* SignIn button */}
-      <div className="hidden md:block">
-        <NavLink
-          to="/signin"
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-        >
-          Subscribe
-        </NavLink>
-      </div>
-
+      {subscribed ? <>
+        <button 
+          className="bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Unsubscribe</button>
+        </> : 
+        <div className="hidden md:block">
+          <NavLink
+            to="/subscribe"
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+          >
+            Subscribe
+          </NavLink>
+        </div>
+      }
+      
       {/* Mobile menu */}
       {isOpen && (
         <div className="absolute top-full left-0 w-full bg-gray-900 flex flex-col items-center md:hidden">
@@ -75,13 +93,15 @@ const Nav = () => {
               {tab.name}
             </NavLink>
           ))}
-          <NavLink
-            to="/signin"
-            onClick={() => setIsOpen(false)}
-            className="w-full text-center bg-red-500 hover:bg-red-600 px-4 py-3 mt-2 rounded-md transition"
-          >
-            Sign In
-          </NavLink>
+          {subscribed ? <><button className="bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Unsubscribe</button></>  :
+              <NavLink
+                to="/subscribe"
+                onClick={() => setIsOpen(false)}
+                className="w-full text-center bg-red-500 hover:bg-red-600 px-4 py-3 mt-2 rounded-md transition"
+              >
+                Subscribe
+              </NavLink>
+            }
         </div>
       )}
     </nav>
