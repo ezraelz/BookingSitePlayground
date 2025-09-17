@@ -30,6 +30,7 @@ const Nav = () => {
     { name: 'Blog', path: '/blog' },
     { name: 'Services', path: '/services' },
     { name: 'Contact', path: '/contact' },
+    { name: subscribed ? "Unsubscribe" : 'Subscribe', path: subscribed ? '/unsubscribed' : '/subscribe' },
   ];
 
   return (
@@ -68,19 +69,14 @@ const Nav = () => {
         ))}
       </div>
 
-      {subscribed ? <>
-        <button 
-          className="bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition">Unsubscribe</button>
-        </> : 
-        <div className="hidden md:block">
+      <div className="hidden md:block">
           <NavLink
-            to="/subscribe"
+            to="/signin"
             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
           >
-            Subscribe
+            SignIn
           </NavLink>
         </div>
-      }
       
       {/* Mobile menu */}
       {isOpen && (
