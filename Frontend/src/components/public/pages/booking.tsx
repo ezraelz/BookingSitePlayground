@@ -86,7 +86,7 @@ const Booking = () => {
   };
 
   return (
-    <section className="bg-gray-50 py-12 px-12 lg:px-20">
+    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-12 lg:px-20">
       <div className="max-w-3xl mx-auto bg-white shadow rounded-2xl p-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
           Book Your Playground

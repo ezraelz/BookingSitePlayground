@@ -2,7 +2,7 @@ import React from "react";
 
 const AboutUs = () => {
   return (
-    <section className="bg-gray-50 py-12 px-6 lg:px-20">
+    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-6 lg:px-20">
       <div className="max-w-6xl mx-auto text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-6">
           About Our Playground Rentals

@@ -25,7 +25,7 @@ const Subscribe = () => {
   useEffect(()=> {
     const savedEmail = localStorage.getItem('SubscribedEmail');
     if (savedEmail) {
-        axios.get(`/subscribed/check?email=${savedEmail}`)
+        axios.get(`/subscribed/check/?email=${savedEmail}`)
         .then((res)=> {
             if (res.data.subscribed){
                 setSubscribed(true);
@@ -60,7 +60,7 @@ const Subscribe = () => {
   )
 
   return (
-    <section className="bg-gray-100 py-14 px-6 text-center">
+    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-14 px-6 text-center">
       <h2 className="text-3xl font-bold mb-4 mt-6">Subscribe to our Newsletter</h2>
       <p className="text-gray-600 mb-6">
         Stay updated with our latest news, articles, and resources, sent straight

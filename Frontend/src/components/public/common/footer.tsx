@@ -1,3 +1,4 @@
+import { p } from "framer-motion/client";
 import axios from "../../../hooks/api";
 import React, { useState } from "react";
 import type { FormEvent } from "react";  // type-only import for FormEvent
@@ -32,6 +33,11 @@ const Footer: React.FC = () => {
 
   const handleSubscribe =async (e: React.FormEvent) => {
     e.preventDefault();
+    const savedEmail = localStorage.getItem('SubscribedEmail');
+    if (savedEmail === formData.email) {
+      toast.info('already subscribed!')
+      return;
+    } else {
     try{
       await axios.post<Email>(`/subscribers/`, formData);
       toast.success("Subscribed successfully!");
@@ -41,6 +47,7 @@ const Footer: React.FC = () => {
     } catch (err){
       toast.error('something went wrong, faild to subscribe!')
     }
+   }
   };
 
   return (

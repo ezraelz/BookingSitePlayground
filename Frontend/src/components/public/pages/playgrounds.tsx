@@ -24,7 +24,6 @@ const Playgrounds: React.FC = () => {
         const res = await api.get<Field[]>("/field/");
         // Ensure data is always an array
         setFields(Array.isArray(res.data) ? res.data : []);
-        console.log("Fetched fields:", res.data);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch playgrounds.");
@@ -41,7 +40,7 @@ const Playgrounds: React.FC = () => {
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
-    <div className="bg-white p-6">
+    <div className="bg-gradient-to-br from-blue-30 to-indigo-10 p-6">
       <h1 className="text-2xl font-bold mb-4">All Playgrounds</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {fields.length === 0 ? (
