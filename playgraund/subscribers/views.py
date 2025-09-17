@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import Subscribers
 from .serializers import SubscribersSerializer, SubscribersCreateSerializer
@@ -33,10 +34,11 @@ class SubscribersDetailView(APIView):
         return Response('Field deleted successfully!')
     
 class CheckSubscribtion(APIView):
+
     def get(self, request):
         email = request.GET.get('email')
         if not email:
             return Response('email required')
         subscribed = Subscribers.objects.filter(email=email).exists()
-        return Response({'Subscribed!': subscribed})
+        return Response({'subscribed': subscribed})
     

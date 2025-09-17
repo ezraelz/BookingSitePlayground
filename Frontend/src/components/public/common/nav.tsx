@@ -2,20 +2,25 @@ import axios from '../../../hooks/api';
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
+axios.defaults.withCredentials = true; 
+
 const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
 
   useEffect(()=> {
+    const checkEmail = async ()=> {
     const savedEmail = localStorage.getItem('SubscribedEmail');
     if (savedEmail) {
-      axios.get(`/subscribed/check?email=${savedEmail}`)
+      axios.get(`/subscribed/check/?email=${savedEmail}`)
       .then((res)=> {
         if (res.data.subscribed){
           setSubscribed(true);
         }
       }).catch(()=>{})
     }
+   }
+   checkEmail();
   }, []);
 
   const tabs = [
@@ -78,7 +83,7 @@ const Nav = () => {
       
       {/* Mobile menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 w-full bg-gray-900 flex flex-col items-center md:hidden">
+        <div className="absolute top-full left-0 w-full bg-gray-900 flex flex-col items-center md:hidden z-20">
           {tabs.map((tab) => (
             <NavLink
               key={tab.name}
