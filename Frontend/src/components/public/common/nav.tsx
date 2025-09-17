@@ -7,6 +7,7 @@ axios.defaults.withCredentials = true;
 const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [loggedin, setLoggedin] = useState(false);
 
   useEffect(()=> {
     const checkEmail = async ()=> {
@@ -20,7 +21,19 @@ const Nav = () => {
       }).catch(()=>{})
     }
    }
+   const checkStatus = async () => {
+    const username = localStorage.getItem('username');
+    if (username){
+      axios.get(`/login/check/?username=${username}`)
+      .then((res)=> {
+        if (res.data.loggedin){
+          setLoggedin(true);
+        }
+      }).catch(()=>{})
+    }
+   }
    checkEmail();
+   checkStatus();
   }, []);
 
   const tabs = [
@@ -73,7 +86,7 @@ const Nav = () => {
             to="/signin"
             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
           >
-            SignIn
+            {loggedin ? 'Signout': 'SignIn'}
           </NavLink>
         </div>
       

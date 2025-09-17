@@ -26,7 +26,6 @@ class UsersView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class UserDetailView(APIView):
     """GET, PUT, DELETE a single user by ID"""
 
@@ -66,6 +65,14 @@ class LoginView(APIView):
         })
         else: return Response({'error': 'Invalid credentials'}, status=400)
 
+class CheckLogin(APIView):
+    def get(self, request):
+        username = request.GET.get('username')
+        if not username:
+            return Response('username required')
+        loggedin = Profile.objects.filter(username=username).exists()
+        return Response({'loggedin': loggedin})
+    
 def logout_view(request):
     logout(request)
     messages.success(request, 'Logged out successfully')
