@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'payments',
     'timeslot',
     'users',
+    'blog',
     'subscribers',
     'corsheaders',
     'django_filters',

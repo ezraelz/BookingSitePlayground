@@ -27,6 +27,7 @@ const Nav = () => {
     { name: 'Home', path: '/' },
     { name: 'About Us', path: '/about' },
     { name: 'Booking', path: '/booking' },
+    { name: 'Blog', path: '/blog' },
     { name: 'Services', path: '/services' },
     { name: 'Contact', path: '/contact' },
   ];

@@ -1,11 +1,13 @@
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "../components/public/home";
 import Reserve from "../components/public/pages/reserve";
 import AboutUs from "../components/public/pages/aboutUs";
 import Booking from "../components/public/pages/booking";
 import Services from "../components/public/pages/services";
 import Subscribe from "../components/public/pages/subscribe";
+import Blog from "../components/public/pages/blog";
+import Contact from "../components/public/pages/contact";
 
 const PublicRoutes = () => {
   return (
@@ -14,7 +16,8 @@ const PublicRoutes = () => {
         <Route path="about" element={<AboutUs />} />
         <Route path="booking" element={<Booking />} />
         <Route path="services" element={<Services />} />
-        <Route path="contact" element={<Home />} />
+        <Route path="contact" element={<Contact />} />
+        <Route path="blog" element={<Blog />} />
         <Route path="subscribe" element={<Subscribe />} />
         <Route path="reserve/:id" element={<Reserve />} />
       </Routes>

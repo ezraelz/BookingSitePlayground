@@ -25,5 +25,6 @@ urlpatterns = [
     path('', include('field.urls')),
     path('', include('timeslot.urls')),
     path('', include('users.urls')),
+    path('', include('blog.urls')),
     path('', include('subscribers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
