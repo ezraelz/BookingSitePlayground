@@ -22,7 +22,7 @@ const PublicRoutes = () => {
         <Route path="contact" element={<Contact />} />
         <Route path="blog" element={<Blog />} />
         <Route path="subscribe" element={<Subscribe />} />
-        <Route path="signin" element={<SignIn />} />
+        <Route path="login" element={<SignIn />} />
         <Route path="signup" element={<SignUp />} />
         <Route path="signout" element={<SignOut />} />
         <Route path="reserve/:id" element={<Reserve />} />

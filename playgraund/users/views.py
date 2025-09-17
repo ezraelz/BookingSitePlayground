@@ -73,7 +73,6 @@ class CheckLogin(APIView):
         loggedin = Profile.objects.filter(username=username).exists()
         return Response({'loggedin': loggedin})
 
-
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

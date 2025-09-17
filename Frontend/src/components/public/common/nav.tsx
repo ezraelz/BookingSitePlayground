@@ -28,6 +28,7 @@ const Nav = () => {
       .then((res)=> {
         if (res.data.loggedin){
           setLoggedin(true);
+        } else {
         }
       }).catch(()=>{})
     }
@@ -48,7 +49,7 @@ const Nav = () => {
   return (
     <nav className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between relative">
       {/* Logo */}
-      <div className="text-2xl font-bold">Playground</div>
+      <div className="text-2xl font-bold">WUB C0URTYARD</div>
 
       {/* Hamburger for mobile */}
       <div className="md:hidden">
@@ -82,13 +83,13 @@ const Nav = () => {
       </div>
 
       <div className="hidden md:block">
-          <NavLink
-            to={loggedin ? '/signout' : "/signin"}
-            className={loggedin ? "bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition" : "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"}
-          >
-            {loggedin ? 'Signout': 'SignIn'}
-          </NavLink>
-        </div>
+        <NavLink
+          to={loggedin ? '/signout' : "/login"}
+          className={loggedin ? "bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition" : "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"}
+        >
+          {loggedin ? 'Signout': 'SignIn'}
+        </NavLink>
+      </div>
       
       {/* Mobile menu */}
       {isOpen && (

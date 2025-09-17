@@ -15,10 +15,13 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative  p-10 z-10 flex flex-col items-center justify-center h-full text-center px-4">
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 animate-fadeIn">
-          Welcome to PlayRent!
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 animate-fadeIn">
+          Welcome to WUB CourtYard!
         </h1>
-        <p className="text-white text-base sm:text-lg md:text-2xl mb-8 animate-fadeIn delay-200">
+        <h2 className="text-2xl sm:text-4xl md:text-3xl font-bold text-white mb-4 animate-fadeIn">
+          FOOTBALL RESERVATION!
+        </h2>
+        <p className="text-white text-base sm:text-lg md:text-xl mb-8 animate-fadeIn delay-200">
           Here to Reserve a playground 
         </p>
         <button 

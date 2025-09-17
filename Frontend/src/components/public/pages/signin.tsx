@@ -29,7 +29,7 @@ const SignIn: React.FC = () => {
     }
     setError('');
     try{
-        const response = await axios.post(`/signin/`, formData);
+        const response = await axios.post(`/login/`, formData);
         const { access, refresh, id, role, profile_image, is_superuser, username } =
             response.data;
 

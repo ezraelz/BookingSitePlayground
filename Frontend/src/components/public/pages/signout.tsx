@@ -70,8 +70,8 @@ const SignOut: React.FC = () => {
         loading: false,
       });
       toast.success('Signed out successfully!');
-      window.location.reload();
-      navigate('/signin');
+      window.location.reload()
+      navigate('/signout');
     } catch (err: any) {
       setError('Error signing out');
       toast.error('Failed to sign out.');
