@@ -4,7 +4,12 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Profile
 from .serializers import CreateUserProfileSerializer, ProfileSerializer
-
+from django.contrib.auth.decorators import login_required
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import authenticate, login,logout
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib import messages
+from django.shortcuts import render,redirect
 
 class UsersView(APIView):
     """GET all users, POST create a new user"""
@@ -43,3 +48,25 @@ class UserDetailView(APIView):
         user.delete()
         return Response({"detail": "User deleted"}, status=status.HTTP_204_NO_CONTENT)
 
+class LoginView(APIView): 
+    def post(self, request): 
+        username = request.data.get('username') 
+        password = request.data.get('password') 
+        user = authenticate(username=username, password=password) 
+        if user is not None: 
+            login(request, user) 
+            refresh = RefreshToken.for_user(user) 
+            return Response({
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "role": user.role,  
+                "is_superuser": user.is_superuser,
+                "id": user.id,
+                "username": user.username
+        })
+        else: return Response({'error': 'Invalid credentials'}, status=400)
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Logged out successfully')
+    return redirect('login')

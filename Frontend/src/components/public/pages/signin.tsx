@@ -1,21 +1,52 @@
+import axios from '../../../hooks/api';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const SignIn: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  })
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+        ...prev,
+        [name]: name === "username" || name === 'password'
+            ? (value)
+            : value,
+        }));
+    };
+
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!formData.username || !formData.password) {
       setError('Please fill in all fields');
       return;
     }
     setError('');
-    // Add your authentication logic here
-    console.log('Sign in attempt with:', { email, password });
+    try{
+        const response = await axios.post(`/signin/`, formData);
+        const { access, refresh, id, role, profile_image, is_superuser, username } =
+            response.data;
+
+        localStorage.setItem("access_token", access);
+        localStorage.setItem("refresh_token", refresh);
+        localStorage.setItem("id", id);
+        localStorage.setItem("profile_image", profile_image || "");
+        localStorage.setItem("role", role);
+        localStorage.setItem("username", username);
+        localStorage.setItem("is_superuser", is_superuser);
+
+        toast.success('Signed in successfully!');
+        navigate('/');
+    }catch(err){
+        toast.error('Faild to sign in! please try again')
+        console.error('error login', err);
+    }
   };
 
   return (
@@ -31,16 +62,17 @@ const SignIn: React.FC = () => {
 
         <div className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
             </label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              name='username'
+              id="username"
+              type="username"
+              value={formData.username}
+              onChange={handleChange}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your email"
+              placeholder="Enter your username"
             />
           </div>
 
@@ -49,10 +81,11 @@ const SignIn: React.FC = () => {
               Password
             </label>
             <input
+              name='password'
               id="password"
               type="password"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your password"
             />

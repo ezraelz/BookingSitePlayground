@@ -25,11 +25,7 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = [
             'username',
-            'first_name',
-            'last_name',
             'email',
-            'sex',
-            'age',
             'phone_number',
             'password'  
         ]
