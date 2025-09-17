@@ -8,9 +8,12 @@ const Nav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loggedin, setLoggedin] = useState(false);
+  const role = localStorage.getItem('role');
+
+  console.log('role', role);
 
   useEffect(()=> {
-    const checkEmail = async ()=> {
+   const checkEmail = async ()=> {
     const savedEmail = localStorage.getItem('SubscribedEmail');
     if (savedEmail) {
       axios.get(`/subscribed/check/?email=${savedEmail}`)
@@ -43,7 +46,7 @@ const Nav = () => {
     { name: 'Booking', path: '/booking' },
     { name: 'Services', path: '/services' },
     { name: 'Contact', path: '/contact' },
-    { name: subscribed ? "Unsubscribe" : 'Subscribe', path: subscribed ? '/unsubscribed' : '/subscribe' },
+    { name: role === 'admin' ? 'Dashboard' : subscribed ? "Unsubscribe" : 'Subscribe', path: role === 'admin' ? '/dashboard' : subscribed ? '/unsubscribed' : '/subscribe' },
   ];
 
   return (
