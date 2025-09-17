@@ -72,8 +72,22 @@ class CheckLogin(APIView):
             return Response('username required')
         loggedin = Profile.objects.filter(username=username).exists()
         return Response({'loggedin': loggedin})
-    
-def logout_view(request):
-    logout(request)
-    messages.success(request, 'Logged out successfully')
-    return redirect('login')
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # blacklist refresh token if using JWT
+            refresh_token = request.data.get("refresh")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+
+            # logout Django session (if using sessions at all)
+            logout(request)
+
+            return Response({"detail": "Logged out successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

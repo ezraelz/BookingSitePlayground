@@ -43,6 +43,7 @@ const SignIn: React.FC = () => {
 
         toast.success('Signed in successfully!');
         navigate('/');
+        window.location.reload();
     }catch(err){
         toast.error('Faild to sign in! please try again')
         console.error('error login', err);

@@ -83,8 +83,8 @@ const Nav = () => {
 
       <div className="hidden md:block">
           <NavLink
-            to="/signin"
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+            to={loggedin ? '/signout' : "/signin"}
+            className={loggedin ? "bg-green-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition" : "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"}
           >
             {loggedin ? 'Signout': 'SignIn'}
           </NavLink>
