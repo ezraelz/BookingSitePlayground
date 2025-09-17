@@ -9,6 +9,7 @@ import Subscribe from "../components/public/pages/subscribe";
 import Blog from "../components/public/pages/blog";
 import Contact from "../components/public/pages/contact";
 import SignIn from "../components/public/pages/signin";
+import SignUp from "../components/public/pages/signup";
 
 const PublicRoutes = () => {
   return (
@@ -21,6 +22,7 @@ const PublicRoutes = () => {
         <Route path="blog" element={<Blog />} />
         <Route path="subscribe" element={<Subscribe />} />
         <Route path="signin" element={<SignIn />} />
+        <Route path="signup" element={<SignUp />} />
         <Route path="reserve/:id" element={<Reserve />} />
       </Routes>
   )
