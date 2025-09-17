@@ -68,6 +68,7 @@ const SignIn: React.FC = () => {
           <a href="#" className="text-sm text-blue-600 hover:underline">
             Forgot password?
           </a>
+          <span className="text-sm text-blue-600"> First time <button className="text-sm text-red-600 hover:underline"> SignUp </button> Here</span>
         </div>
       </div>
     </div>
