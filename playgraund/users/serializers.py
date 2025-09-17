@@ -26,7 +26,6 @@ class CreateUserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'username',
             'email',
-            'phone_number',
             'password'  
         ]
         extra_kwargs = {

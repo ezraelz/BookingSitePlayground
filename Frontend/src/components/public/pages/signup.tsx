@@ -34,7 +34,7 @@ const SignUp: React.FC = () => {
       return;
     }
     setError('');
-    await axios.post(`/signup/`, formData);
+    await axios.post(`/users/`, formData);
     toast.success('Signup in successfully!');
     navigate('/signin');
     console.log('Sign up attempt with:', {formData });
@@ -57,6 +57,7 @@ const SignUp: React.FC = () => {
               Username
             </label>
             <input
+              name='username'
               id="username"
               type="text"
               value={formData.username}
@@ -71,6 +72,7 @@ const SignUp: React.FC = () => {
               Email
             </label>
             <input
+              name='email'
               id="email"
               type="email"
               value={formData.email}
@@ -85,6 +87,7 @@ const SignUp: React.FC = () => {
               Password
             </label>
             <input
+              name='password'
               id="password"
               type="password"
               value={formData.password}
@@ -99,6 +102,7 @@ const SignUp: React.FC = () => {
               Confirm Password
             </label>
             <input
+              name='confirmPassword'
               id="confirmPassword"
               type="password"
               value={formData.confirmPassword}
@@ -117,7 +121,7 @@ const SignUp: React.FC = () => {
         </div>
 
         <div className="mt-4 text-center">
-          <button onClick={()=> navigate(`/signin`)} className="text-sm text-blue-600 hover:underline">
+          <button onClick={()=> navigate(`/login`)} className="text-sm text-blue-600 hover:underline">
             Already have an account? Sign in
           </button>
         </div>
