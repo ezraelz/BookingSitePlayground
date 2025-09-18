@@ -25,7 +25,7 @@ const Playgrounds: React.FC = () => {
   useEffect(() => {
     const fetchFields = async () => {
       try {
-        const res = await api.get<Field[]>("/field/");
+        const res = await api.get<Field[]>("/fields/");
         // Ensure data is always an array
         setFields(Array.isArray(res.data) ? res.data : []);
       } catch (err) {

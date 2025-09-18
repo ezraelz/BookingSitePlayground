@@ -52,7 +52,7 @@ const Booking = () => {
     const fetchData = async () => {
       try {
         const [fieldsRes, timeslotsRes] = await Promise.all([
-          axios.get<Field[]>('/field/'),
+          axios.get<Field[]>('/fields/'),
           axios.get<Timeslot[]>('/timeslot/')
         ]);
         

@@ -1,48 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "../../../../hooks/api";
 
 interface Timeslot {
   id: number;
-  field: string;
-  date: string;
   start_time: string;
   end_time: string;
   price: number;
   status: "available" | "booked";
-  bookedBy?: { id: number; name: string; email: string }; // link to booking/user
 }
 
 const Timeslot: React.FC = () => {
-  const [timeslots, setTimeslots] = useState<Timeslot[]>([
-    {
-      id: 1,
-      field: "Playground A",
-      date: "2025-09-20",
-      start_time: "10:00",
-      end_time: "12:00",
-      price: 200,
-      status: "available",
-    },
-    {
-      id: 2,
-      field: "Playground B",
-      date: "2025-09-20",
-      start_time: "14:00",
-      end_time: "16:00",
-      price: 250,
-      status: "booked",
-      bookedBy: { id: 101, name: "John Doe", email: "john@example.com" },
-    },
-  ]);
+  const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
 
   const [form, setForm] = useState({
-    field: "",
-    date: "",
     start_time: "",
     end_time: "",
     price: "",
     status: "available",
   });
+
+  useEffect(() => {
+      const fetchTimeslotsAndAvailability = async () => {
+  
+        try {
+          // Fetch timeslots from /timeslot/
+          const timeslotRes = await axios.get('/timeslot/');
+          const timeslots: Timeslot[] = timeslotRes.data;
+  
+          setTimeslots(timeslots);
+        } catch (err) {
+          toast.error('Failed to fetch timeslots or availability. Displaying default schedule.');
+          console.error(err);
+        }
+      };
+  
+      fetchTimeslotsAndAvailability();
+    }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -50,25 +45,10 @@ const Timeslot: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault();
-    const newSlot: Timeslot = {
-      id: timeslots.length + 1,
-      field: form.field,
-      date: form.date,
-      start_time: form.start_time,
-      end_time: form.end_time,
-      price: Number(form.price),
-      status: form.status as "available" | "booked",
-      bookedBy:
-        form.status === "booked"
-          ? { id: 999, name: "Temp User", email: "user@example.com" }
-          : undefined,
-    };
-    setTimeslots([...timeslots, newSlot]);
+    await axios.post(`/timeslot/`, form);
     setForm({
-      field: "",
-      date: "",
       start_time: "",
       end_time: "",
       price: "",
@@ -85,21 +65,18 @@ const Timeslot: React.FC = () => {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3 border">Field</th>
-              <th className="p-3 border">Date</th>
+              <th className="p-3 border">No</th>
               <th className="p-3 border">Start</th>
               <th className="p-3 border">End</th>
               <th className="p-3 border">Price</th>
               <th className="p-3 border">Status</th>
-              <th className="p-3 border">Booked By</th>
               <th className="p-3 border">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {timeslots.map((slot) => (
+            {timeslots.map((slot, index) => (
               <tr key={slot.id} className="hover:bg-gray-50">
-                <td className="p-3 border">{slot.field}</td>
-                <td className="p-3 border">{slot.date}</td>
+                <td className="p-3 border">{index + 1}</td>
                 <td className="p-3 border">{slot.start_time}</td>
                 <td className="p-3 border">{slot.end_time}</td>
                 <td className="p-3 border">${slot.price}</td>
@@ -113,21 +90,6 @@ const Timeslot: React.FC = () => {
                   >
                     {slot.status}
                   </span>
-                </td>
-                <td className="p-3 border">
-                  {slot.bookedBy ? (
-                    <Link
-                      to={`/dashboard/users/${slot.bookedBy.id}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      {slot.bookedBy.name} <br />
-                      <span className="text-sm text-gray-500">
-                        {slot.bookedBy.email}
-                      </span>
-                    </Link>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
                 </td>
                 <td className="p-3 border space-x-2">
                   <button className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
@@ -150,23 +112,6 @@ const Timeslot: React.FC = () => {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
-          <input
-            type="text"
-            name="field"
-            placeholder="Playground Name"
-            value={form.field}
-            onChange={handleChange}
-            required
-            className="border rounded px-3 py-2"
-          />
-          <input
-            type="date"
-            name="date"
-            value={form.date}
-            onChange={handleChange}
-            required
-            className="border rounded px-3 py-2"
-          />
           <input
             type="time"
             name="start_time"
