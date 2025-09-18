@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "../../../../hooks/api";
+import { toast } from "react-toastify";
 
 interface User {
   id: number;
-  name: string;
+  username: string;
   email: string;
   role: string;
   status: string;
@@ -17,18 +19,18 @@ const UserDetail: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO: fetch from backend
-    // Example mock data for now
-    setUser({
-      id: Number(id),
-      name: "John Doe",
-      email: "john@example.com",
-      role: "Customer",
-      status: "Active",
-      created_at: "2025-01-05",
-      last_login: "2025-09-15 10:30 AM",
-    });
-  }, [id]);
+      const fetchUsers = async () => {
+        try {
+          const res = await axios.get(`/users/${id}`);
+          setUser(res.data);
+        } catch (err) {
+          toast.error('Failed to fetch users.');
+          console.error(err);
+        }
+      };
+  
+      fetchUsers();
+    }, []);
 
   if (!user) return <p>Loading...</p>;
 
@@ -40,7 +42,7 @@ const UserDetail: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <div>
           <p className="text-sm text-gray-500">Full Name</p>
-          <p className="text-lg font-semibold">{user.name}</p>
+          <p className="text-lg font-semibold">{user.username}</p>
         </div>
         <div>
           <p className="text-sm text-gray-500">Email</p>

@@ -1,5 +1,6 @@
 import React from 'react';
 import bg from '../../../assets/images/soccer-afl-01-v1.jpg';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();

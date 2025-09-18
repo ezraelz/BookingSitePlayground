@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "../../../../hooks/api";
 
 interface User {
   id: number;
-  name: string;
+  username: string;
   email: string;
-  role: "admin" | "manager" | "customer";
+  role: string;
   status: "active" | "suspended";
-  joined: string;
+  created_at: string;
 }
 
 const Users: React.FC = () => {
@@ -15,39 +17,23 @@ const Users: React.FC = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Simulated API fetch
-    setUsers([
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        role: "customer",
-        status: "active",
-        joined: "2025-01-12",
-      },
-      {
-        id: 2,
-        name: "Admin User",
-        email: "admin@playground.com",
-        role: "admin",
-        status: "active",
-        joined: "2024-11-05",
-      },
-      {
-        id: 3,
-        name: "Manager Jane",
-        email: "jane@playground.com",
-        role: "manager",
-        status: "suspended",
-        joined: "2024-09-23",
-      },
-    ]);
-  }, []);
+    useEffect(() => {
+      const fetchUsers = async () => {
+        try {
+          const res = await axios.get('/users/');
+          setUsers(res.data);
+        } catch (err) {
+          toast.error('Failed to fetch users.');
+          console.error(err);
+        }
+      };
+  
+      fetchUsers();
+    }, []);
 
   const filteredUsers = users.filter(
     (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -78,7 +64,7 @@ const Users: React.FC = () => {
           <thead>
             <tr className="bg-gray-100 text-left text-sm">
               <th className="py-2 px-3 border">#</th>
-              <th className="py-2 px-3 border">Name</th>
+              <th className="py-2 px-3 border">Username</th>
               <th className="py-2 px-3 border">Email</th>
               <th className="py-2 px-3 border">Role</th>
               <th className="py-2 px-3 border">Status</th>
@@ -90,7 +76,7 @@ const Users: React.FC = () => {
             {filteredUsers.map((user, index) => (
               <tr key={user.id} className="hover:bg-gray-50 text-sm">
                 <td className="py-2 px-3 border">{index + 1}</td>
-                <td className="py-2 px-3 border">{user.name}</td>
+                <td className="py-2 px-3 border">{user.username}</td>
                 <td className="py-2 px-3 border">{user.email}</td>
                 <td className="py-2 px-3 border capitalize">{user.role}</td>
                 <td
@@ -102,7 +88,7 @@ const Users: React.FC = () => {
                 >
                   {user.status}
                 </td>
-                <td className="py-2 px-3 border">{user.joined}</td>
+                <td className="py-2 px-3 border">{user.created_at}</td>
                 <td className="py-2 px-3 border space-x-2">
                   <button 
                     onClick={()=> navigate(`/dashboard/users/detail/${user.id}`)}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../../hooks/api";
+import axios from "../../../hooks/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -25,9 +25,9 @@ const Playgrounds: React.FC = () => {
   useEffect(() => {
     const fetchFields = async () => {
       try {
-        const res = await api.get<Field[]>("/fields/");
-        // Ensure data is always an array
-        setFields(Array.isArray(res.data) ? res.data : []);
+        const res = await axios.get("/fields/");
+        setFields(res.data);
+        console.log('field', fields);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch playgrounds. Please try again later.");

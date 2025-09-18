@@ -36,6 +36,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(("Is Staff"), default=False)
     is_active = models.BooleanField(("Is Active"), default=True)
     created_at = models.DateField(("Created At"), auto_now=False, auto_now_add=True)
+    last_login = models.DateTimeField(("Last login"), auto_now=False, auto_now_add=False, blank=True, null=True)
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email",]

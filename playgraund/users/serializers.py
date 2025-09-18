@@ -16,7 +16,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'role',
             'phone_number',
             'is_guest',  
-            'is_active'
+            'is_active',
+            'last_login',
+            'created_at',
         ]
 
 
