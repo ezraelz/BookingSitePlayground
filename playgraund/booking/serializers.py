@@ -23,6 +23,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'duration',
             'status',
             'created_at',
+            'is_paid',
         ]
 
 class BookingCreateSerializer(serializers.ModelSerializer):

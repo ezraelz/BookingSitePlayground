@@ -7,6 +7,24 @@ from .serializers import BookingSerializer, BookingCreateSerializer
 from timeslot.models import Timeslot
 from .serializers import  BookingAvailabilitySerializer
 from datetime import datetime
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
+from datetime import timedelta, date
+from django.db.models import Count
+from rest_framework.decorators import api_view
+
+@api_view(["GET"])
+def bookings_stats(request):
+    today = date.today()
+    labels, values = [], []
+
+    for i in range(6, -1, -1):  # Last 7 days
+        day = today - timedelta(days=i)
+        count = Booking.objects.filter(date=day).count()
+        labels.append(day.strftime("%a"))  # Mon, Tue, etc
+        values.append(count)
+
+    return Response({"labels": labels, "values": values})
 
 class BookingView(APIView):
     def get(self, request):
@@ -35,7 +53,6 @@ class BookingDetailView(APIView):
         booking.delete()
         return Response('booking deleted successfully!')
     
-
 class BookingAvailabilityView(APIView):
     def get(self, request):
         date_str = request.query_params.get('date')
@@ -75,3 +92,30 @@ class BookingStatusView(APIView):
         booking.delete()
         return Response('booking deleted successfully!')
     
+class Revenue(APIView):
+    def get(self, request):
+        month = request.GET.get("month")  # e.g., "2025-09"
+        if not month:
+            return Response({"error": "month parameter required (YYYY-MM)"}, status=400)
+
+        year, month_num = month.split("-")
+        total = (
+            Booking.objects.filter(date__year=year, date__month=month_num, status="confirmed")
+            .aggregate(total=Sum("playground__price_per_hour"))
+            .get("total") or 0
+        )
+        return Response({"total": total})
+    
+# views.py
+@api_view(["GET"])
+def recent_activities(request):
+    recent_bookings = Booking.objects.order_by("-id")[:5]  # latest 5 bookings
+    activities = [
+        {
+            "id": b.id,
+            "text": f"User {b.guest_name} booked {b.playground.name}",
+            "time": b.date.strftime("%Y-%m-%d"),
+        }
+        for b in recent_bookings
+    ]
+    return Response(activities)

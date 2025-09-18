@@ -13,6 +13,7 @@ interface Booking {
   };
   date: string;
   status: string;
+  is_paid: boolean;
 }
 
 const Bookings: React.FC = () => {
@@ -68,6 +69,7 @@ const Bookings: React.FC = () => {
               <th className="p-3 text-left">Playground</th>
               <th className="p-3 text-left">Timeslot</th>
               <th className="p-3 text-left">Date</th>
+              <th className="p-3 text-left">Paid</th>
               <th className="p-3 text-left">Status</th>
               <th className="p-3 text-center">Actions</th>
             </tr>
@@ -80,6 +82,19 @@ const Bookings: React.FC = () => {
                 <td className="p-3">{booking.playground.name}</td>
                 <td className="p-3">{booking.time_slot.start_time} - {booking.time_slot.end_time}</td>
                 <td className="p-3">{booking.date}</td>
+                <td className="p-3">
+                  <span
+                    className={`px-3 py-1 rounded text-sm font-medium ${
+                      booking.is_paid === true
+                        ? "bg-green-100 text-green-700"
+                        : booking.is_paid === false
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {booking.is_paid === true ? 'Paid' : 'UnPaid'}
+                  </span>
+                </td>
                 <td className="p-3">
                   <span
                     className={`px-3 py-1 rounded text-sm font-medium ${
