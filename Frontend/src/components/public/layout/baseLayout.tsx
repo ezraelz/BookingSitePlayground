@@ -5,12 +5,13 @@ import Footer from '../common/footer'
 
 const BaseLayout = () => {
   return (
-    <div>
-        <Nav />
-        <div className="">
-            <Outlet />
-        </div>
-        <Footer />
+    <div className="min-h-screen flex flex-col">
+      <Nav />
+      {/* Pad the top to clear the fixed navbar (h-16 ≈ 64px). Adjust if your header height changes. */}
+      <main id="main" className="flex-1 pt-20 md:pt-24">
+        <Outlet />
+      </main>
+      <Footer />
     </div>
   )
 }
