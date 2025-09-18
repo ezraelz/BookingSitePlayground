@@ -47,6 +47,7 @@ class Booking(models.Model):
     is_booked = models.BooleanField(("Is Booked"), default=False)
 
     class Meta:
+        unique_together = ['playground', 'date', 'time_slot']
         ordering = ['-created_at']
 
     def __str__(self):

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "../../../../hooks/api";
+import { useNavigate } from "react-router-dom";
 
 interface TimeslotType {
   id: number;
@@ -16,32 +18,19 @@ interface PlaygroundType {
 }
 
 const Playground: React.FC = () => {
-  const [playgrounds, setPlaygrounds] = useState<PlaygroundType[]>([
-    {
-      id: 1,
-      name: "Green Field",
-      location: "Downtown",
-      price_per_hour: 50,
-      is_active: true,
-      timeslots: [
-        { id: 1, time: "10:00 AM - 11:00 AM", is_active: true },
-        { id: 2, time: "11:00 AM - 12:00 PM", is_active: false },
-      ],
-    },
-    {
-      id: 2,
-      name: "Blue Arena",
-      location: "Uptown",
-      price_per_hour: 70,
-      is_active: true,
-      timeslots: [
-        { id: 1, time: "01:00 PM - 02:00 PM", is_active: true },
-      ],
-    },
-  ]);
+  const [playgrounds, setPlaygrounds] = useState<PlaygroundType[]>([]);
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [newTimeslot, setNewTimeslot] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(()=> {
+    const fetchPlayground = async ()=> {
+      const res = await axios.get('/fields/');
+      setPlaygrounds(res.data);
+    }
+    fetchPlayground();
+  }, []);
 
   const toggleExpand = (id: number) =>
     setExpandedId(expandedId === id ? null : id);
@@ -94,12 +83,19 @@ const Playground: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Playgrounds Management</h1>
-
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold mb-6">Playgrounds Management</h1>
+        <button 
+          onClick={()=> navigate(`/dashboard/playgrounds/add`)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+          + Add Playground
+        </button>
+      </div>
       <div className="overflow-x-auto bg-white shadow rounded">
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 border-b">
             <tr>
+              <th className="p-3 text-left">No</th>
               <th className="p-3 text-left">Name</th>
               <th className="p-3 text-left">Location</th>
               <th className="p-3 text-left">Price per Hour</th>
@@ -108,9 +104,10 @@ const Playground: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {playgrounds.map((pg) => (
+            {playgrounds.map((pg, index) => (
               <React.Fragment key={pg.id}>
                 <tr className="border-b hover:bg-gray-50">
+                  <td className="p-3">{index + 1}</td>
                   <td className="p-3">{pg.name}</td>
                   <td className="p-3">{pg.location}</td>
                   <td className="p-3">${pg.price_per_hour}</td>

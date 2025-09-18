@@ -7,9 +7,10 @@ import UserDetail from "../components/admin/pages/users/userdetail";
 import Timeslot from "../components/admin/pages/timeslot/timeslot";
 import Bookings from "../components/admin/pages/bookings";
 import Payments from "../components/admin/pages/payments";
-import Playground from "../components/admin/pages/fields";
+import Playground from "../components/admin/pages/playgrounds/fields";
 import Analytics from "../components/admin/pages/analytics";
 import Settings from "../components/admin/pages/settings";
+import AddPlayground from "../components/admin/pages/playgrounds/addFields";
 
 const AdminRoutes = () => {
   return (
@@ -23,6 +24,8 @@ const AdminRoutes = () => {
         <Route path="/bookings" element={< Bookings />} />
         <Route path="/payments" element={< Payments />} />
         <Route path="/playgrounds" element={< Playground />} />
+        <Route path="/playgrounds/add" element={< AddPlayground />} />
+
         <Route path="/analytics" element={< Analytics />} />
         <Route path="/settings" element={< Settings />} />
 
