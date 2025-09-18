@@ -8,7 +8,7 @@ interface User {
   username: string;
   email: string;
   role: string;
-  status: "active" | "suspended";
+  is_active: boolean;
   created_at: string;
 }
 
@@ -22,6 +22,7 @@ const Users: React.FC = () => {
         try {
           const res = await axios.get('/users/');
           setUsers(res.data);
+          console.log('users', res.data);
         } catch (err) {
           toast.error('Failed to fetch users.');
           console.error(err);
@@ -81,12 +82,12 @@ const Users: React.FC = () => {
                 <td className="py-2 px-3 border capitalize">{user.role}</td>
                 <td
                   className={`py-2 px-3 border font-medium ${
-                    user.status === "active"
+                    user.is_active === true
                       ? "text-green-600"
                       : "text-red-600"
                   }`}
                 >
-                  {user.status}
+                  {user.is_active === true ? 'Active' : 'In Active'}
                 </td>
                 <td className="py-2 px-3 border">{user.created_at}</td>
                 <td className="py-2 px-3 border space-x-2">

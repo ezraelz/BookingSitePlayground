@@ -2,8 +2,11 @@ from rest_framework import serializers
 from .models import Booking
 from field.models import Field
 from timeslot.models import Timeslot
+from field.serializers import FieldSerializer
 
 class BookingSerializer(serializers.ModelSerializer):
+    playground = FieldSerializer()
+    
     class Meta:
         model = Booking
         fields = [

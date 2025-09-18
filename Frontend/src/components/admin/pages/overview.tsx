@@ -23,7 +23,6 @@ import axios from "../../../hooks/api";
 // Register Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 interface TimeslotType {
@@ -39,8 +38,28 @@ interface PlaygroundType {
   is_active: boolean;
   timeslots: TimeslotType[];
 }
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+interface Booking {
+  id: number;
+  guest_name: string;
+  playground: {
+    name: string;
+  };
+  timeslot: string;
+  date: string;
+  status: string;
+}
 
 const Overview: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [playgrounds, setPlaygrounds] = useState<PlaygroundType[]>([]);
   const navigate = useNavigate();
   
@@ -49,14 +68,24 @@ const Overview: React.FC = () => {
       const res = await axios.get('/fields/');
       setPlaygrounds(res.data);
     }
+    const fetchUsers = async ()=> {
+      const res = await axios.get('/users/');
+      setUsers(res.data);
+    }
+    const fetchBookings = async ()=> {
+      const res = await axios.get('/booking/');
+      setBookings(res.data);
+    }
     fetchPlayground();
+    fetchUsers();
+    fetchBookings();
   }, []);
 
    const summaryCards = [
     { title: "Total Playgrounds", value: playgrounds.length, icon: BuildingStorefrontIcon, color: "bg-blue-600" },
-    { title: "Bookings Today", value: "34", icon: ClipboardDocumentListIcon, color: "bg-green-600" },
+    { title: "Bookings Today", value: bookings.length, icon: ClipboardDocumentListIcon, color: "bg-green-600" },
     { title: "Revenue (This Month)", value: "$4,560", icon: CurrencyDollarIcon, color: "bg-yellow-600" },
-    { title: "Active Users", value: "1,234", icon: UsersIcon, color: "bg-purple-600" },
+    { title: "Active Users", value: users.length, icon: UsersIcon, color: "bg-purple-600" },
   ];
 
   // 📈 Chart Data
@@ -79,13 +108,6 @@ const Overview: React.FC = () => {
     plugins: { legend: { display: true, position: "top" as const } },
     scales: { y: { beginAtZero: true } },
   };
-
-  // 📋 Recent Bookings
-  const recentBookings = [
-    { id: 1, user: "John Doe", playground: "Field 1", date: "Sep 18, 4–6 PM", status: "Confirmed" },
-    { id: 2, user: "Jane Smith", playground: "Field 3", date: "Sep 18, 2–4 PM", status: "Pending" },
-    { id: 3, user: "Mark Lee", playground: "Court 2", date: "Sep 17, 6–8 PM", status: "Cancelled" },
-  ];
 
   // 🔔 Recent Activity
   const activities = [
@@ -131,10 +153,10 @@ const Overview: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {recentBookings.map((booking) => (
+              {bookings.map((booking) => (
                 <tr key={booking.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3 text-sm text-gray-700">{booking.user}</td>
-                  <td className="p-3 text-sm text-gray-700">{booking.playground}</td>
+                  <td className="p-3 text-sm text-gray-700">{booking.guest_name}</td>
+                  <td className="p-3 text-sm text-gray-700">{booking.playground.name}</td>
                   <td className="p-3 text-sm text-gray-700">{booking.date}</td>
                   <td className="p-3 text-sm">
                     <span
