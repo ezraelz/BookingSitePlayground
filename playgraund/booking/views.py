@@ -23,8 +23,8 @@ class BookingView(APIView):
     
 class BookingDetailView(APIView):
     def put(self, request, pk):
-        booking = get_object_or_404(booking, id=pk)
-        serializer = BookingSerializer(booking, partial=True)
+        booking = get_object_or_404(Booking, id=pk)
+        serializer = BookingSerializer(booking, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -60,4 +60,18 @@ class BookingAvailabilityView(APIView):
             context={'date': date}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class BookingStatusView(APIView):
+    def put(self, request, pk):
+        booking = get_object_or_404(booking, id=pk)
+        serializer = BookingSerializer(booking, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        booking = get_object_or_404(Booking, id=pk)
+        booking.delete()
+        return Response('booking deleted successfully!')
     

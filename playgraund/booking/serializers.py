@@ -3,9 +3,11 @@ from .models import Booking
 from field.models import Field
 from timeslot.models import Timeslot
 from field.serializers import FieldSerializer
+from timeslot.serializers import TimeslotSerializer
 
 class BookingSerializer(serializers.ModelSerializer):
     playground = FieldSerializer()
+    time_slot = TimeslotSerializer()
     
     class Meta:
         model = Booking

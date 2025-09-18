@@ -1,38 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "../../../hooks/api";
 
 interface Booking {
   id: number;
-  user: string;
-  playground: string;
-  timeslot: string;
+  guest_name: string;
+  playground: {
+    name: string;
+  };
+  time_slot: {
+    start_time: string;
+    end_time: string;
+  };
   date: string;
-  status: "pending" | "approved" | "canceled";
+  status: string;
 }
 
 const Bookings: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([
-    {
-      id: 1,
-      user: "John Doe",
-      playground: "Green Field",
-      timeslot: "10:00 AM - 11:00 AM",
-      date: "2025-09-18",
-      status: "pending",
-    },
-    {
-      id: 2,
-      user: "Jane Smith",
-      playground: "Blue Arena",
-      timeslot: "01:00 PM - 02:00 PM",
-      date: "2025-09-19",
-      status: "approved",
-    },
-  ]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
-  const handleStatusChange = (id: number, status: Booking["status"]) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status } : b))
-    );
+  useEffect(()=> {
+    const fetchBookings = async ()=> {
+      const res = await axios.get('/booking/');
+      setBookings(res.data);
+    }
+    fetchBookings();
+  }, []);
+
+  const handleStatusChange = async (id: number, status: Booking["status"]) => {
+    setLoadingId(id);
+    try {
+      await axios.put(`/booking/${id}/`, { status });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b))
+      );
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   return (
@@ -72,9 +76,9 @@ const Bookings: React.FC = () => {
             {bookings.map((booking) => (
               <tr key={booking.id} className="border-b hover:bg-gray-50">
                 <td className="p-3">{booking.id}</td>
-                <td className="p-3">{booking.user}</td>
-                <td className="p-3">{booking.playground}</td>
-                <td className="p-3">{booking.timeslot}</td>
+                <td className="p-3">{booking.guest_name}</td>
+                <td className="p-3">{booking.playground.name}</td>
+                <td className="p-3">{booking.time_slot.start_time} - {booking.time_slot.end_time}</td>
                 <td className="p-3">{booking.date}</td>
                 <td className="p-3">
                   <span

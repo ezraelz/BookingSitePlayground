@@ -6,7 +6,7 @@ from timeslot.models import Timeslot
 class Booking(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
-        ("confirmed", "Confirmed"),
+        ("approved", "Approved"),
         ("cancelled", "Cancelled"),
     ]
 
@@ -45,6 +45,7 @@ class Booking(models.Model):
     created_at = models.DateTimeField(("Created At"), auto_now_add=True)
     updated_at = models.DateTimeField(("Updated at"), auto_now=True)
     is_booked = models.BooleanField(("Is Booked"), default=False)
+    is_paid = models.BooleanField(("Is Paid"), default=False, blank=True, null=True)
 
     class Meta:
         unique_together = ['playground', 'date', 'time_slot']
