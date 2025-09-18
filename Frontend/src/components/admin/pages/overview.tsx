@@ -11,30 +11,35 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import {
+  UserPlusIcon,
+  CurrencyDollarIcon,
+  ClipboardDocumentListIcon,
+  BuildingStorefrontIcon,
+} from "@heroicons/react/24/outline";
+
+// Register Chart.js
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
 
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const Overview: React.FC = () => {
-  const summaryData = [
-    { title: "Total Users", value: "1,234", icon: UsersIcon, color: "bg-blue-600" },
-    { title: "Active Sessions", value: "456", icon: ChartBarIcon, color: "bg-green-600" },
-    { title: "New Signups", value: "78", icon: ClockIcon, color: "bg-yellow-600" },
+   const summaryCards = [
+    { title: "Total Playgrounds", value: "12", icon: BuildingStorefrontIcon, color: "bg-blue-600" },
+    { title: "Bookings Today", value: "34", icon: ClipboardDocumentListIcon, color: "bg-green-600" },
+    { title: "Revenue (This Month)", value: "$4,560", icon: CurrencyDollarIcon, color: "bg-yellow-600" },
+    { title: "Active Users", value: "1,234", icon: UsersIcon, color: "bg-purple-600" },
   ];
 
-  const recentActivities = [
-    { id: 1, action: "User John Doe signed up", time: "2 hours ago" },
-    { id: 2, action: "Admin updated settings", time: "4 hours ago" },
-    { id: 3, action: "New report generated", time: "Yesterday" },
-  ];
-
-  // Chart.js data
+  // 📈 Chart Data
   const chartData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     datasets: [
       {
-        label: "Active Users",
-        data: [200, 300, 250, 400, 350, 500],
+        label: "Bookings",
+        data: [12, 19, 8, 15, 22, 30, 25],
         borderColor: "#2563eb",
         backgroundColor: "rgba(37, 99, 235, 0.1)",
         fill: true,
@@ -45,64 +50,127 @@ const Overview: React.FC = () => {
 
   const chartOptions = {
     responsive: true,
-    plugins: {
-      legend: {
-        display: true,
-        position: "top" as const,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
+    plugins: { legend: { display: true, position: "top" as const } },
+    scales: { y: { beginAtZero: true } },
   };
+
+  // 📋 Recent Bookings
+  const recentBookings = [
+    { id: 1, user: "John Doe", playground: "Field 1", date: "Sep 18, 4–6 PM", status: "Confirmed" },
+    { id: 2, user: "Jane Smith", playground: "Field 3", date: "Sep 18, 2–4 PM", status: "Pending" },
+    { id: 3, user: "Mark Lee", playground: "Court 2", date: "Sep 17, 6–8 PM", status: "Cancelled" },
+  ];
+
+  // 🏟️ Playground Management
+  const playgrounds = [
+    { id: 1, name: "Field 1", location: "City Center", price: "$20/hr", available: true },
+    { id: 2, name: "Court 2", location: "North Park", price: "$25/hr", available: false },
+    { id: 3, name: "Arena 3", location: "West Side", price: "$30/hr", available: true },
+  ];
+
+  // 🔔 Recent Activity
+  const activities = [
+    { id: 1, text: "User John booked Field 1", time: "2h ago" },
+    { id: 2, text: "Admin updated pricing", time: "5h ago" },
+    { id: 3, text: "New user signup: Alice", time: "1d ago" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-    <div className="max-w-7xl mx-auto w-full flex flex-col space-y-6">
-        {/* Page Title */}
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {summaryData.map((item) => (
-            <div
-            key={item.title}
-            className="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4"
-            >
-            <div className={`p-3 rounded-full ${item.color}`}>
-                <item.icon className="w-8 h-8 text-white" />
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* 📊 Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {summaryCards.map((card) => (
+            <div key={card.title} className="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
+              <div className={`p-3 rounded-full ${card.color}`}>
+                <card.icon className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">{card.title}</p>
+                <p className="text-xl font-semibold text-gray-800">{card.value}</p>
+              </div>
             </div>
-            <div>
-                <p className="text-sm font-medium text-gray-600">{item.title}</p>
-                <p className="text-xl font-semibold text-gray-800">{item.value}</p>
-            </div>
-            </div>
-        ))}
+          ))}
         </div>
 
-        {/* Chart Section */}
+        {/* 📈 Bookings Chart */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">User Activity</h3>
-        <Line data={chartData} options={chartOptions} />
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Bookings Overview</h3>
+          <Line data={chartData} options={chartOptions} />
         </div>
 
-        {/* Recent Activity Section */}
+        {/* 📋 Recent Bookings Table */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-        <ul className="space-y-4">
-            {recentActivities.map((activity) => (
-            <li key={activity.id} className="flex justify-between items-center">
-                <span className="text-gray-600">{activity.action}</span>
-                <span className="text-sm text-gray-500">{activity.time}</span>
-            </li>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Bookings</h3>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="p-3 text-sm font-medium text-gray-600">User</th>
+                <th className="p-3 text-sm font-medium text-gray-600">Playground</th>
+                <th className="p-3 text-sm font-medium text-gray-600">Date</th>
+                <th className="p-3 text-sm font-medium text-gray-600">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentBookings.map((booking) => (
+                <tr key={booking.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3 text-sm text-gray-700">{booking.user}</td>
+                  <td className="p-3 text-sm text-gray-700">{booking.playground}</td>
+                  <td className="p-3 text-sm text-gray-700">{booking.date}</td>
+                  <td className="p-3 text-sm">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                        booking.status === "Confirmed"
+                          ? "bg-green-100 text-green-700"
+                          : booking.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {booking.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 🏟️ Playgrounds List */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Playgrounds</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {playgrounds.map((pg) => (
+              <div key={pg.id} className="border rounded-lg p-4 shadow-sm bg-gray-50">
+                <h4 className="font-semibold text-gray-800">{pg.name}</h4>
+                <p className="text-sm text-gray-600">{pg.location}</p>
+                <p className="text-sm text-gray-700">{pg.price}</p>
+                <span
+                  className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${
+                    pg.available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {pg.available ? "Available" : "Unavailable"}
+                </span>
+              </div>
             ))}
-        </ul>
+          </div>
         </div>
-    </div>
+
+        {/* 🔔 Recent Activity */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+          <ul className="space-y-3">
+            {activities.map((act) => (
+              <li key={act.id} className="flex justify-between text-sm text-gray-600">
+                <span>{act.text}</span>
+                <span className="text-gray-500">{act.time}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 };
-
 export default Overview;

@@ -30,7 +30,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     { name: 'Dashboard', icon: HomeIcon, path: '/dashboard' },
     { name: 'Users', icon: UsersIcon, path: '/dashboard/users' },
     { name: 'Timeslot', icon: UsersIcon, path: '/dashboard/timeslots' },
-    { name: 'Fields', icon: UsersIcon, path: '/dashboard/fields' },
+    { name: 'Bookings', icon: UsersIcon, path: '/dashboard/Bookings' },
+    { name: 'Payments', icon: UsersIcon, path: '/dashboard/payments' },
+    { name: 'Playgrounds', icon: UsersIcon, path: '/dashboard/fields' },
     { name: 'Analytics', icon: ChartBarIcon, path: '/dashboard/analytics' },
     { name: 'Settings', icon: CogIcon, path: '/dashboard/settings' },
   ];
@@ -56,11 +58,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   return (
     <div
       className={`bg-gray-800 text-white h-screen fixed top-0 left-0 z-50 transition-all duration-300 flex flex-col overflow-hidden ${
-        collapsed ? 'w-16' : 'w-54'
+        collapsed ? 'w-16' : 'w-62'
       }`}
     >
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+      <div className="flex items-center justify-between p-2 border-b border-gray-700">
         {!collapsed && (
           <h2 className="text-xl font-semibold truncate">Admin Panel</h2>
         )}
@@ -80,12 +82,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       </div>
 
       {/* User Profile Section */}
-      <div className="p-4 border-b border-gray-700 flex items-center">
+      <div className="p-2 border-b border-gray-700 flex items-center">
         <UserCircleIcon className="w-10 h-10 text-gray-400" />
         {!collapsed && (
           <div className="ml-3 overflow-hidden">
-            <p className="text-sm font-medium truncate">Admin User</p>
-            <p className="text-xs text-gray-400 truncate">admin@example.com</p>
+            <p className="text-sm font-medium truncate">{localStorage.getItem('username')}</p>
+            <p className="text-xs text-gray-400 truncate">{localStorage.getItem('email')}</p>
           </div>
         )}
       </div>

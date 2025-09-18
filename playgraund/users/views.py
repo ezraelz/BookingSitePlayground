@@ -61,7 +61,8 @@ class LoginView(APIView):
                 "role": user.role,  
                 "is_superuser": user.is_superuser,
                 "id": user.id,
-                "username": user.username
+                "username": user.username,
+                'email': user.email
         })
         else: return Response({'error': 'Invalid credentials'}, status=400)
 

@@ -9,6 +9,7 @@ interface UserInfo {
   profileImage: string | null;
   id: string | null;
   is_superuser: boolean;
+  email: string | null;
 }
 
 interface AuthState {
@@ -36,6 +37,7 @@ const SignOut: React.FC = () => {
       const accessToken = localStorage.getItem("access_token");
       const refreshToken = localStorage.getItem("refresh_token");
       const role = localStorage.getItem("role");
+      const email = localStorage.getItem("email");
       const profileImage = localStorage.getItem("profile_image");
       const username = localStorage.getItem("username");
       const id = localStorage.getItem("id");
@@ -44,7 +46,7 @@ const SignOut: React.FC = () => {
       if (accessToken && refreshToken && role && id && !isNaN(parseInt(id, 10))) {
         setAuthState({
           isAuthenticated: true,
-          user: { username, role, profileImage, id, is_superuser },
+          user: { username, role, profileImage, id, is_superuser, email},
           accessToken,
           refreshToken,
           loading: false,

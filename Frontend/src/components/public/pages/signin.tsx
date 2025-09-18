@@ -30,7 +30,7 @@ const SignIn: React.FC = () => {
     setError('');
     try{
         const response = await axios.post(`/login/`, formData);
-        const { access, refresh, id, role, profile_image, is_superuser, username } =
+        const { access, refresh, id, role, profile_image, is_superuser, username, email } =
             response.data;
 
         localStorage.setItem("access_token", access);
@@ -39,6 +39,7 @@ const SignIn: React.FC = () => {
         localStorage.setItem("profile_image", profile_image || "");
         localStorage.setItem("role", role);
         localStorage.setItem("username", username);
+        localStorage.setItem("email", email);
         localStorage.setItem("is_superuser", is_superuser);
 
         toast.success('Signed in successfully!');

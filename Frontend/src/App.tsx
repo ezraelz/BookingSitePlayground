@@ -5,8 +5,8 @@ import './index.css';
 import PublicRoutes from './routes/publicRoutes'
 import BaseLayout from './components/public/layout/baseLayout';
 import { ToastContainer } from 'react-toastify';
-import AdminDashboard from './components/admin/adminDashboard';
 import AdminBaseLayout from './components/admin/layout/adminBaseLayout';
+import AdminRoutes from './routes/adminRouts';
 
 function App() {
 
@@ -21,7 +21,7 @@ function App() {
 
           {/* admin */}
           <Route path='dashboard/*' element={<AdminBaseLayout />}>
-            <Route path='*' element={<AdminDashboard />} />
+            <Route path='*' element={<AdminRoutes />} />
           </Route>
         </Routes>
       </Suspense>
