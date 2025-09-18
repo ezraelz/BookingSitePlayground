@@ -1,0 +1,119 @@
+import React from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line, Bar } from "react-chartjs-2";
+import { UsersIcon } from "@heroicons/react/24/outline";
+
+// Register chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const Analytics: React.FC = () => {
+  // Sample data
+  const bookingsData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Bookings",
+        data: [12, 19, 10, 15, 20, 25],
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37, 99, 235, 0.2)",
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const revenueData = {
+    labels: ["Green Field", "Blue Arena", "Red Court", "Yellow Park"],
+    datasets: [
+      {
+        label: "Revenue ($)",
+        data: [500, 700, 300, 450],
+        backgroundColor: ["#2563eb", "#22c55e", "#facc15", "#f97316"],
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Analytics Overview",
+        font: { size: 18 },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  const topUsers = [
+    { id: 1, name: "John Doe", bookings: 12 },
+    { id: 2, name: "Jane Smith", bookings: 10 },
+    { id: 3, name: "Ali Mohammed", bookings: 8 },
+  ];
+
+  return (
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-white shadow rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-2">Bookings Over Time</h3>
+          <Line data={bookingsData} options={chartOptions} />
+        </div>
+        <div className="bg-white shadow rounded-lg p-4">
+          <h3 className="text-lg font-semibold mb-2">Revenue per Playground</h3>
+          <Bar data={revenueData} options={chartOptions} />
+        </div>
+      </div>
+
+      {/* Top Users */}
+      <div className="bg-white shadow rounded-lg p-4">
+        <h3 className="text-lg font-semibold mb-4">Top Users</h3>
+        <ul className="space-y-2">
+          {topUsers.map((user) => (
+            <li
+              key={user.id}
+              className="flex justify-between border p-2 rounded hover:bg-gray-50"
+            >
+              <span className="flex items-center gap-2">
+                <UsersIcon className="w-5 h-5 text-blue-500" />
+                {user.name}
+              </span>
+              <span className="font-medium">{user.bookings} bookings</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default Analytics;

@@ -30,9 +30,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     { name: 'Dashboard', icon: HomeIcon, path: '/dashboard' },
     { name: 'Users', icon: UsersIcon, path: '/dashboard/users' },
     { name: 'Timeslot', icon: UsersIcon, path: '/dashboard/timeslots' },
-    { name: 'Bookings', icon: UsersIcon, path: '/dashboard/Bookings' },
+    { name: 'Bookings', icon: UsersIcon, path: '/dashboard/bookings' },
     { name: 'Payments', icon: UsersIcon, path: '/dashboard/payments' },
-    { name: 'Playgrounds', icon: UsersIcon, path: '/dashboard/fields' },
+    { name: 'Playgrounds', icon: UsersIcon, path: '/dashboard/playgrounds' },
     { name: 'Analytics', icon: ChartBarIcon, path: '/dashboard/analytics' },
     { name: 'Settings', icon: CogIcon, path: '/dashboard/settings' },
   ];

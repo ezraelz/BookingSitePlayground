@@ -104,11 +104,10 @@ const Users: React.FC = () => {
                 </td>
                 <td className="py-2 px-3 border">{user.joined}</td>
                 <td className="py-2 px-3 border space-x-2">
-                  <button className="text-blue-600 hover:underline">
+                  <button 
+                    onClick={()=> navigate(`/dashboard/users/detail/${user.id}`)}
+                    className="text-blue-600 hover:underline">
                     View
-                  </button>
-                  <button className="text-yellow-600 hover:underline">
-                    Edit
                   </button>
                   <button className="text-red-600 hover:underline">
                     Delete

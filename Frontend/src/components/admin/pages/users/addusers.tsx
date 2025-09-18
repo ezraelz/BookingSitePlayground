@@ -25,7 +25,11 @@ const AddUser: React.FC = () => {
 
   return (
     <div className="bg-white shadow rounded-lg p-7 max-w-lg mx-auto mt-2">
-        <button onClick={()=> navigate(-1)}>back</button>
+       <button 
+           onClick={()=> navigate(-1)}
+           className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+          Back
+        </button>
       <h2 className="text-xl font-bold mb-3">Add New User</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
