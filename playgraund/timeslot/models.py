@@ -2,7 +2,7 @@ from django.db import models
 from field.models import Field
 
 class Timeslot(models.Model):
-    field = models.ForeignKey(Field, verbose_name=("Field"), on_delete=models.CASCADE)
+    field = models.ForeignKey(Field, verbose_name=("Field"), on_delete=models.CASCADE, null=True, blank=True)
     start_time = models.TimeField(("Start Time"), auto_now=False, auto_now_add=False)
     end_time = models.TimeField(("End Time"), auto_now=False, auto_now_add=False)
     is_booked = models.BooleanField(("Is Booked"))

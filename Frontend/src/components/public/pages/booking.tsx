@@ -67,7 +67,6 @@ const Booking = () => {
     fetchData();
   }, []);
 
-  // Fetch availability when field or date changes
   useEffect(() => {
     if (selectedField && selectedDate) {
       fetchAvailability(selectedField, selectedDate);
@@ -77,13 +76,11 @@ const Booking = () => {
   const fetchAvailability = async (fieldId: number, date: string) => {
     setIsLoadingAvailability(true);
     try {
-      // This would be your actual API endpoint for availability
       const response = await axios.get(`/availability/?field=${fieldId}&date=${date}`);
       setAvailabilityData(response.data);
     } catch (err) {
       console.error('Error fetching availability:', err);
       toast.error('Failed to load availability data');
-      // For demo purposes, create mock data
       createMockAvailability(fieldId, date);
     } finally {
       setIsLoadingAvailability(false);
@@ -91,7 +88,6 @@ const Booking = () => {
   };
 
   const createMockAvailability = (fieldId: number, date: string) => {
-    // Create mock availability data for demonstration
     const mockData: BookingSlot[] = timeSlots.map(slot => ({
       date,
       time_slot: slot.id,
@@ -107,7 +103,7 @@ const Booking = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "duration" ? Number(value) : value,
+      [name]: name === "duration" || name === "time_slot" ? Number(value) : value,
     }));
   };
 
@@ -137,9 +133,11 @@ const Booking = () => {
         !(s.time_slot === slot.time_slot && s.date === slot.date)
       ));
     } else {
-      // For single selection, replace previous selection
-      // For multiple selection, add to array
-      setSelectedSlots([slot]);
+      setSelectedSlots([...selectedSlots, slot]);
+      // Update formData.time_slot for form view compatibility
+      if (viewMode === 'form') {
+        setFormData(prev => ({ ...prev, time_slot: slot.time_slot }));
+      }
     }
   };
 
@@ -148,28 +146,38 @@ const Booking = () => {
     setIsSubmitting(true);
 
     // Validate form
-    if (!selectedField || !formData.date || selectedSlots.length === 0) {
+    if (!selectedField || !formData.date || 
+        (viewMode === 'form' && !formData.time_slot) || 
+        (viewMode === 'timetable' && selectedSlots.length === 0)) {
       toast.error('Please fill all required fields and select at least one time slot');
       setIsSubmitting(false);
       return;
     }
 
-    // Prepare booking data - for multiple slots
-    const bookings = selectedSlots.map(slot => ({
-      guest_name: formData.guest_name,
-      guest_email: formData.guest_email,
-      guest_phone: formData.guest_phone,
-      playground: selectedField,
-      date: formData.date,
-      time_slot: slot.time_slot,
-      duration: formData.duration
-    }));
+    // Prepare booking data
+    const bookings = viewMode === 'timetable' 
+      ? selectedSlots.map(slot => ({
+          guest_name: formData.guest_name,
+          guest_email: formData.guest_email,
+          guest_phone: formData.guest_phone,
+          playground: selectedField,
+          date: formData.date,
+          time_slot: slot.time_slot,
+          duration: formData.duration
+        }))
+      : [{
+          guest_name: formData.guest_name,
+          guest_email: formData.guest_email,
+          guest_phone: formData.guest_phone,
+          playground: selectedField,
+          date: formData.date,
+          time_slot: formData.time_slot,
+          duration: formData.duration
+        }];
 
     try {
-      // Send all bookings
       await Promise.all(bookings.map(booking => axios.post('/booking/', booking)));
       
-      // Reset form
       setFormData({
         guest_name: "",
         guest_email: "",
@@ -193,7 +201,6 @@ const Booking = () => {
     }
   };
 
-  // Calculate minimum date (today)
   const today = new Date().toISOString().split('T')[0];
 
   return (
@@ -236,11 +243,9 @@ const Booking = () => {
         </div>
 
         {viewMode === 'form' ? (
-          // Original form view
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Personal Information</h3>
                   <div className="space-y-4">
@@ -287,7 +292,6 @@ const Booking = () => {
                   </div>
                 </div>
 
-                {/* Booking Details */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Booking Details</h3>
                   <div className="space-y-4">
@@ -327,7 +331,21 @@ const Booking = () => {
                         <select
                           name="time_slot"
                           value={formData.time_slot}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            handleChange(e);
+                            // Update selectedSlots for form view
+                            const selectedTimeSlot = timeSlots.find(slot => slot.id === Number(e.target.value));
+                            if (selectedTimeSlot && selectedField && formData.date) {
+                              setSelectedSlots([{
+                                date: formData.date,
+                                time_slot: selectedTimeSlot.id,
+                                field: selectedField,
+                                status: 'selected',
+                                start_time: selectedTimeSlot.start_time,
+                                end_time: selectedTimeSlot.end_time
+                              }]);
+                            }
+                          }}
                           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
                           required
                         >
@@ -390,7 +408,6 @@ const Booking = () => {
             </div>
           </div>
         ) : (
-          // Timetable view
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8">
               <div className="mb-8">

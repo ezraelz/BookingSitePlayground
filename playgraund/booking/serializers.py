@@ -42,4 +42,20 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     
-        
+class BookingAvailabilitySerializer(serializers.Serializer):
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, obj):
+        # obj is a TimeSlot instance passed with context
+        date = self.context.get('date')
+        if not date:
+            return 'available'
+        # Check if a booking exists for this timeslot and date
+        booking_exists = Booking.objects.filter(
+            time_slot=obj,
+            date=date,
+            is_booked=True
+        ).exists()
+        return 'booked' if booking_exists else 'available'

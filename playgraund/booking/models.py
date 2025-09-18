@@ -44,6 +44,7 @@ class Booking(models.Model):
     )
     created_at = models.DateTimeField(("Created At"), auto_now_add=True)
     updated_at = models.DateTimeField(("Updated at"), auto_now=True)
+    is_booked = models.BooleanField(("Is Booked"), default=False)
 
     class Meta:
         ordering = ['-created_at']

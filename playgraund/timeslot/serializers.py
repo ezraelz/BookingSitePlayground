@@ -21,4 +21,6 @@ class TimeslotCreateSerializer(serializers.ModelSerializer):
             'end_time',
             'is_booked'
         ]
+
+
         
