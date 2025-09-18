@@ -22,7 +22,7 @@ const AdminBaseLayout: React.FC = () => {
         <Header collapsed={isCollapsed} sidebarWidth={sidebarWidth} />
 
         {/* Outlet for Nested Routes */}
-        <main className="pt-16 p-6 min-h-[calc(100vh - 64px)] flex-wrap">
+        <main className="pt-16 p-6 ml-16 min-h-[calc(100vh - 64px)] flex-wrap">
           <Outlet />
         </main>
       </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
   UsersIcon,
@@ -24,7 +24,7 @@ interface NavItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
-  const [activePath, setActivePath] = useState(window.location.pathname);
+  const location = useLocation();
 
   const navItems: NavItem[] = [
     { name: 'Dashboard', icon: HomeIcon, path: '/dashboard' },
@@ -44,28 +44,25 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     window.location.reload();
   };
 
-  const handleNavClick = (path: string) => {
-    setActivePath(path);
-  };
-
-  const handleKeyPress = (event: React.KeyboardEvent, callback: Function, ...args: any[]) => {
+  const handleKeyPress = (
+    event: React.KeyboardEvent,
+    callback: () => void
+  ) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      callback(...args);
+      callback();
     }
   };
 
   return (
     <div
       className={`bg-gray-800 text-white h-screen fixed top-0 left-0 z-50 transition-all duration-300 flex flex-col overflow-hidden ${
-        collapsed ? 'w-16' : 'w-62'
+        collapsed ? 'w-16' : 'w-64'
       }`}
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-2 border-b border-gray-700">
-        {!collapsed && (
-          <h2 className="text-xl font-semibold truncate">Admin Panel</h2>
-        )}
+        {!collapsed && <h2 className="text-xl font-semibold truncate">Admin Panel</h2>}
         <button
           onClick={onToggle}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -97,22 +94,19 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         <ul className="space-y-1">
           {navItems.map((item) => {
             const IconComponent = item.icon;
-            const isActive = activePath === item.path;
-            
+            const isActive = location.pathname === item.path;
+
             return (
               <li key={item.name}>
                 <NavLink
                   to={item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  className={({ isActive }) =>
-                    `flex items-center p-3 rounded-md transition-colors ${
-                      isActive
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`
-                  }
+                  className={`flex items-center p-3 rounded-md transition-colors ${
+                    isActive
+                      ? 'bg-blue-500 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
                   tabIndex={0}
-                  onKeyPress={(e) => handleKeyPress(e, handleNavClick, item.path)}
+                  onKeyPress={(e) => handleKeyPress(e, () => navigate(item.path))}
                 >
                   <IconComponent className="w-5 h-5 min-w-[1.25rem]" />
                   {!collapsed && <span className="ml-3 truncate">{item.name}</span>}

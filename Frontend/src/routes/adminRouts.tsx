@@ -9,6 +9,7 @@ import Bookings from "../components/admin/pages/bookings";
 import Payments from "../components/admin/pages/payments";
 import Playground from "../components/admin/pages/fields";
 import Analytics from "../components/admin/pages/analytics";
+import Settings from "../components/admin/pages/settings";
 
 const AdminRoutes = () => {
   return (
@@ -23,6 +24,7 @@ const AdminRoutes = () => {
         <Route path="/payments" element={< Payments />} />
         <Route path="/playgrounds" element={< Playground />} />
         <Route path="/analytics" element={< Analytics />} />
+        <Route path="/settings" element={< Settings />} />
 
       </Routes>
   )
