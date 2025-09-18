@@ -5,13 +5,14 @@ import Reserve from "../components/public/pages/reserve";
 import AboutUs from "../components/public/pages/aboutUs";
 import Booking from "../components/public/pages/booking";
 import Services from "../components/public/pages/services";
-import Subscribe from "../components/public/pages/subscribe";
-import Blog from "../components/public/pages/blog";
+
+
 import Contact from "../components/public/pages/contact";
 import SignIn from "../components/public/pages/signin";
 import SignUp from "../components/public/pages/signup";
 import SignOut from "../components/public/pages/signout";
 import Timetable from "../components/public/pages/timetable";
+import Subscribe from "../components/public/pages/subscribe";
 
 const PublicRoutes = () => {
   return (

@@ -1,132 +1,178 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-const AboutUs = () => {
-  const navigate = useNavigate();
-
-  const handleBookNow = () => {
-    navigate("/booking");
-  };
-
+const AboutUs: React.FC = () => {
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-            About <span className="text-green-600">WUB CourtYard</span>
+    <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-6 lg:px-20">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute -left-6 -top-10 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/10" />
+      <div className="pointer-events-none absolute -bottom-8 -right-10 h-48 w-48 translate-x-1/3 translate-y-1/3 rounded-full bg-indigo-500/10" />
+
+      <div className="relative z-10 mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-12 text-center">
+          <h2 className="mb-4 text-4xl md:text-5xl font-bold text-gray-800">
+            About <span className="text-green-600">PlayRent</span>
           </h2>
-          <div className="w-24 h-1 bg-green-500 mx-auto mb-8"></div>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Welcome to <span className="font-semibold text-green-600">WUB CourtYard</span>, 
-            your premier destination for booking high-quality football fields and sports facilities. 
-            We're dedicated to connecting sports enthusiasts with the perfect playing spaces for 
-            casual matches, training sessions, and competitive tournaments.
+          <div className="mx-auto mb-6 h-1 w-24 bg-green-500" />
+          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-gray-600">
+            Welcome to <span className="font-semibold text-green-600">PlayRent</span>,
+            your go-to platform for booking high-quality sports fields and playgrounds.
+            Whether you’re planning a casual match, a training session, or a full
+            tournament, we make it easy to find and reserve the perfect space.
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {/* Hero: text + image */}
+        <div className="grid items-center gap-8 md:grid-cols-2">
+          {/* Text block */}
+          <div className="order-2 md:order-1">
+            <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+              <h3 className="text-2xl font-semibold text-gray-800">
+                Our Mission
+              </h3>
+              <p className="mt-3 text-gray-600">
+                We connect players, teams, and communities with quality facilities.
+                From football to basketball to tennis, we focus on availability,
+                transparent pricing, and a delightful booking experience.
+              </p>
+
+              <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                <div className="rounded-xl bg-green-50 p-4">
+                  <div className="text-2xl font-bold text-green-700">4.9/5</div>
+                  <div className="text-xs text-green-800/80">User Rating</div>
+                </div>
+                <div className="rounded-xl bg-indigo-50 p-4">
+                  <div className="text-2xl font-bold text-indigo-700">1200+</div>
+                  <div className="text-xs text-indigo-800/80">Reviews</div>
+                </div>
+                <div className="rounded-xl bg-green-50 p-4">
+                  <div className="text-2xl font-bold text-green-700">300+</div>
+                  <div className="text-xs text-green-800/80">Venues</div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link
+                  to="/booking"
+                  className="inline-flex items-center rounded-xl bg-green-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-green-700 hover:shadow-lg"
+                >
+                  Book a Playground Now
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="ml-2 h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Image block – place your image in public/images/about-hero.jpg */}
+          <div className="order-1 md:order-2">
+            <div className="relative">
+              <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-indigo-500/20 via-violet-500/20 to-fuchsia-500/20 blur-2xl" />
+              <img
+                src="/images/about-hero.jpg"
+                alt="Players enjoying a match on a premium field"
+                className="relative h-[320px] w-full rounded-3xl object-cover shadow-xl ring-1 ring-black/5 md:h-[420px]"
+              />
+            </div>
+            <p className="mt-3 text-center text-sm text-gray-500">
+              Tip: put your image at <code>/public/images/about-hero.jpg</code>
+            </p>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="mt-16 grid gap-8 md:grid-cols-3">
+          <div className="flex flex-col rounded-2xl bg-white p-8 shadow-lg transition hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-blue-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Easy Booking</h3>
-            <p className="text-gray-600 text-center">
-              Our intuitive platform lets you find and reserve the perfect field in minutes. 
-              Real-time availability and instant confirmations make planning effortless.
+            <h3 className="mb-4 text-center text-xl font-semibold text-gray-800">
+              Easy Booking
+            </h3>
+            <p className="flex-grow text-center text-gray-600">
+              Find available playgrounds near you and reserve your preferred time slot in just a few clicks.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col rounded-2xl bg-white p-8 shadow-lg transition hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-green-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Affordable Prices</h3>
-            <p className="text-gray-600 text-center">
-              We partner with field owners to offer competitive rates with no hidden fees. 
-              Various pricing options to fit every budget and occasion.
+            <h3 className="mb-4 text-center text-xl font-semibold text-gray-800">
+              Affordable Prices
+            </h3>
+            <p className="flex-grow text-center text-gray-600">
+              We work with local field owners to bring you the best rates without hidden costs.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <div className="flex flex-col rounded-2xl bg-white p-8 shadow-lg transition hover:-translate-y-1.5 hover:shadow-xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-indigo-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 text-indigo-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4 text-center">Quality Fields</h3>
-            <p className="text-gray-600 text-center">
-              Every venue in our network is verified for quality, maintenance, and safety standards. 
-              Enjoy premium playing surfaces and facilities for optimal performance.
+            <h3 className="mb-4 text-center text-xl font-semibold text-gray-800">
+              Quality Fields
+            </h3>
+            <p className="flex-grow text-center text-gray-600">
+              Our listed playgrounds are well-maintained to ensure a safe and enjoyable experience for everyone.
             </p>
           </div>
         </div>
 
-        {/* Additional Info Section */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-16">
-          <div className="md:flex">
-            <div className="md:w-1/2 p-10 bg-gradient-to-br from-green-50 to-blue-50 flex items-center">
-              <div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-6">Our Mission</h3>
-                <p className="text-gray-600 mb-6">
-                  At WUB CourtYard, we believe that everyone should have access to quality sports facilities. 
-                  Our mission is to remove the barriers between players and playing spaces, making it easier 
-                  to enjoy the beautiful game of football.
-                </p>
-                <p className="text-gray-600">
-                  Whether you're a casual player looking for a weekend game or a team preparing for a tournament, 
-                  we're here to ensure you have the best possible experience.
-                </p>
-              </div>
-            </div>
-            <div className="md:w-1/2 p-10 bg-gray-800 text-white flex items-center">
-              <div>
-                <h3 className="text-3xl font-bold mb-6">Why Choose Us?</h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">✓</span>
-                    <span>Wide selection of verified fields</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">✓</span>
-                    <span>Secure and easy payment options</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">✓</span>
-                    <span>24/7 customer support</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">✓</span>
-                    <span>Flexible cancellation policies</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2 mt-1">✓</span>
-                    <span>User reviews and ratings</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center">
-          <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Ready to Play?</h3>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of players who have already discovered the easiest way to book football fields. 
-            Your perfect game is just a few clicks away.
+        {/* Reviews row (kept from your original, slightly refined) */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-500">
+            Join thousands of satisfied customers who have booked with us
           </p>
-          <button 
-            onClick={handleBookNow}
-            className="px-8 py-4 bg-green-600 text-white font-semibold rounded-xl shadow-lg hover:bg-green-700 transition-colors duration-300 transform hover:scale-105"
-          >
-            Book a Playground Now
-          </button>
+          <div className="mt-3 flex items-center justify-center space-x-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <svg
+                key={star}
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            ))}
+            <span className="ml-2 text-gray-600">4.9/5 from 1200+ reviews</span>
+          </div>
         </div>
       </div>
     </section>

@@ -1,42 +1,45 @@
+import React, { useEffect, useMemo, useState } from "react";
+import DatePicker from "react-datepicker";
+import { format } from "date-fns";
+import "react-datepicker/dist/react-datepicker.css";
+
 import axios from "../../../hooks/api";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+
+type Sport = "football" | "basketball" | "tennis";
 
 interface Field {
   id: number;
   name: string;
   location: string;
-  price_per_hour: string;
+  price_per_hour: string; // backend returns string; we’ll cast to number when needed
   image: string | null;
   is_active: boolean;
+  sport?: Sport;
 }
 
 interface Timeslot {
   id: number;
-  start_time: string;
-  end_time: string;
+  start_time: string; // "12:00"
+  end_time: string;   // "14:00"
   is_active: boolean;
 }
 
-interface BookingSlot {
-  date: string;
-  time_slot: number;
-  field: number;
-  status: 'available' | 'booked' | 'selected';
-  start_time: string;
-  end_time: string;
-}
+type PlanType = "single" | "1m" | "3m" | "6m";
 
-const Booking = () => {
+const Booking: React.FC = () => {
+  // ---------- Filters / selections ----------
+  const [sport, setSport] = useState<Sport>("football");
   const [fields, setFields] = useState<Field[]>([]);
-  const [selectedField, setSelectedField] = useState<number | ''>('');
-  const [timeSlots, setTimeSlots] = useState<Timeslot[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [viewMode, setViewMode] = useState<'form' | 'timetable'>('form');
-  const [selectedSlots, setSelectedSlots] = useState<BookingSlot[]>([]);
-  const [availabilityData, setAvailabilityData] = useState<BookingSlot[]>([]);
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [selectedField, setSelectedField] = useState<string>("");
+
+  const [date, setDate] = useState<Date | null>(new Date());
+  const [availableSlots, setAvailableSlots] = useState<Timeslot[]>([]);
+  const [selectedTimeslot, setSelectedTimeslot] = useState<string>("");
+
+  const [plan, setPlan] = useState<PlanType>("single"); // single | 1m | 3m | 6m
+  const [durationHours, setDurationHours] = useState<number>(1);
 
   const [formData, setFormData] = useState({
     guest_name: "",
@@ -99,105 +102,107 @@ const Booking = () => {
     setAvailabilityData(mockData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === "duration" || name === "time_slot" ? Number(value) : value,
-    }));
-  };
-
-  const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value ? Number(e.target.value) : '';
-    setSelectedField(value);
-    setFormData(prev => ({ ...prev, playground: value || 0 }));
-    setSelectedSlots([]);
-  };
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const date = e.target.value;
-    setSelectedDate(date);
-    setFormData(prev => ({ ...prev, date }));
-    setSelectedSlots([]);
-  };
-
-  const handleSlotSelection = (slot: BookingSlot) => {
-    if (slot.status !== 'available') return;
-    
-    const isSelected = selectedSlots.some(s => 
-      s.time_slot === slot.time_slot && s.date === slot.date
-    );
-    
-    if (isSelected) {
-      setSelectedSlots(selectedSlots.filter(s => 
-        !(s.time_slot === slot.time_slot && s.date === slot.date)
-      ));
-    } else {
-      setSelectedSlots([...selectedSlots, slot]);
-      // Update formData.time_slot for form view compatibility
-      if (viewMode === 'form') {
-        setFormData(prev => ({ ...prev, time_slot: slot.time_slot }));
+  // ---------- Fetch availability whenever field/date changes ----------
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!selectedField || !date) {
+        setAvailableSlots([]);
+        setSelectedTimeslot("");
+        return;
       }
-    }
+      try {
+        const dateStr = format(date, "yyyy-MM-dd");
+        // Adjust this endpoint to your actual API:
+        // e.g., /timeslot/available?field_id=1&date=2025-09-18
+        const res = await axios.get<Timeslot[]>(`/timeslot/available`, {
+          params: { field_id: selectedField, date: dateStr },
+        });
+
+        const list = Array.isArray(res.data) ? res.data : [];
+        // Only active slots
+        const active = list.filter(ts => ts.is_active !== false);
+        setAvailableSlots(active);
+        // Clear picked timeslot if not in the new list
+        if (selectedTimeslot && !active.some(ts => String(ts.id) === selectedTimeslot)) {
+          setSelectedTimeslot("");
+        }
+      } catch (e) {
+        console.error("Failed to fetch availability, falling back to all timeslots", e);
+        // Fallback: get all timeslots (if your API doesn’t have /available yet)
+        try {
+          const resAll = await axios.get<Timeslot[]>(`/timeslot/`);
+          const listAll = Array.isArray(resAll.data) ? resAll.data : [];
+          const active = listAll.filter(ts => ts.is_active !== false);
+          setAvailableSlots(active);
+        } catch (err) {
+          console.error("Failed to fetch timeslots", err);
+          setAvailableSlots([]);
+        }
+      }
+    };
+    fetchAvailability();
+  }, [selectedField, date, selectedTimeslot]);
+
+  // ---------- Derived values ----------
+  const selectedFieldObj = useMemo(
+    () => fields.find(f => String(f.id) === selectedField),
+    [fields, selectedField]
+  );
+
+  const pricePerHour = selectedFieldObj ? Number(selectedFieldObj.price_per_hour || 0) : 0;
+
+  const monthsForPlan: Record<PlanType, number> = { single: 0, "1m": 1, "3m": 3, "6m": 6 };
+
+  // A very simple price model (replace with your business rules):
+  // - Single session: hours * price_per_hour
+  // - Monthly plans: assume 4 weeks/month, 1 session per week
+  //   (adjust as needed; real systems often let you pick days-of-week)
+  const estimatedSessions =
+    plan === "single" ? 1 : 4 * monthsForPlan[plan]; // one per week
+  const estimatedTotal =
+    plan === "single"
+      ? durationHours * pricePerHour
+      : estimatedSessions * durationHours * pricePerHour;
+
+  // ---------- Handlers ----------
+  const onInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Validate form
-    if (!selectedField || !formData.date || 
-        (viewMode === 'form' && !formData.time_slot) || 
-        (viewMode === 'timetable' && selectedSlots.length === 0)) {
-      toast.error('Please fill all required fields and select at least one time slot');
-      setIsSubmitting(false);
-      return;
-    }
+    if (!selectedField) return toast.error("Please choose a field");
+    if (!date) return toast.error("Please pick a date");
+    if (!selectedTimeslot) return toast.error("Please choose a timeslot");
 
-    // Prepare booking data
-    const bookings = viewMode === 'timetable' 
-      ? selectedSlots.map(slot => ({
-          guest_name: formData.guest_name,
-          guest_email: formData.guest_email,
-          guest_phone: formData.guest_phone,
-          playground: selectedField,
-          date: formData.date,
-          time_slot: slot.time_slot,
-          duration: formData.duration
-        }))
-      : [{
-          guest_name: formData.guest_name,
-          guest_email: formData.guest_email,
-          guest_phone: formData.guest_phone,
-          playground: selectedField,
-          date: formData.date,
-          time_slot: formData.time_slot,
-          duration: formData.duration
-        }];
+    const payload = {
+      guest_name: formData.guest_name,
+      guest_email: formData.guest_email,
+      guest_phone: formData.guest_phone,
+      notes: formData.notes,
+      sport,
+      playground: Number(selectedField),
+      date: format(date, "yyyy-MM-dd"),
+      time_slot: Number(selectedTimeslot),
+      duration: Number(durationHours),
+      plan_type: plan,                 // "single" | "1m" | "3m" | "6m"
+      months: monthsForPlan[plan],     // 0 | 1 | 3 | 6
+    };
 
     try {
-      await Promise.all(bookings.map(booking => axios.post('/booking/', booking)));
-      
-      setFormData({
-        guest_name: "",
-        guest_email: "",
-        guest_phone: '',
-        playground: 0,
-        date: "",
-        time_slot: 0,
-        duration: 1,
-      });
-      setSelectedField('');
-      setSelectedDate('');
-      setSelectedSlots([]);
-      
-      toast.success("Booking Submitted Successfully!");
-    } catch (err: any) {
-      console.error('Booking error:', err);
-      const errorMessage = err.response?.data?.message || 'Something went wrong!';
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      await axios.post(`/booking/`, payload);
+      toast.success("Booking submitted successfully!");
+
+      // Reset minimal fields
+      setFormData({ guest_name: "", guest_email: "", guest_phone: "", notes: "" });
+      setSelectedTimeslot("");
+      setDurationHours(1);
+      // keep field/sport/date; users often book multiple
+    } catch (err) {
+      console.error("Booking error", err);
+      toast.error("Something went wrong while booking.");
     }
   };
 
