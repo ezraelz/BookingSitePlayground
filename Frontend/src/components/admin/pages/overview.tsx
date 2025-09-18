@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { UsersIcon, ChartBarIcon, ClockIcon } from "@heroicons/react/24/outline";
 import {
   Chart as ChartJS,
@@ -17,6 +17,8 @@ import {
   ClipboardDocumentListIcon,
   BuildingStorefrontIcon,
 } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
+import axios from "../../../hooks/api";
 
 // Register Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -24,10 +26,34 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 // Register chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+interface TimeslotType {
+  id: number;
+  time: string;
+  is_active: boolean;
+}
+interface PlaygroundType {
+  id: number;
+  name: string;
+  location: string;
+  price_per_hour: number;
+  is_active: boolean;
+  timeslots: TimeslotType[];
+}
 
 const Overview: React.FC = () => {
+  const [playgrounds, setPlaygrounds] = useState<PlaygroundType[]>([]);
+  const navigate = useNavigate();
+  
+  useEffect(()=> {
+    const fetchPlayground = async ()=> {
+      const res = await axios.get('/fields/');
+      setPlaygrounds(res.data);
+    }
+    fetchPlayground();
+  }, []);
+
    const summaryCards = [
-    { title: "Total Playgrounds", value: "12", icon: BuildingStorefrontIcon, color: "bg-blue-600" },
+    { title: "Total Playgrounds", value: playgrounds.length, icon: BuildingStorefrontIcon, color: "bg-blue-600" },
     { title: "Bookings Today", value: "34", icon: ClipboardDocumentListIcon, color: "bg-green-600" },
     { title: "Revenue (This Month)", value: "$4,560", icon: CurrencyDollarIcon, color: "bg-yellow-600" },
     { title: "Active Users", value: "1,234", icon: UsersIcon, color: "bg-purple-600" },
@@ -59,13 +85,6 @@ const Overview: React.FC = () => {
     { id: 1, user: "John Doe", playground: "Field 1", date: "Sep 18, 4–6 PM", status: "Confirmed" },
     { id: 2, user: "Jane Smith", playground: "Field 3", date: "Sep 18, 2–4 PM", status: "Pending" },
     { id: 3, user: "Mark Lee", playground: "Court 2", date: "Sep 17, 6–8 PM", status: "Cancelled" },
-  ];
-
-  // 🏟️ Playground Management
-  const playgrounds = [
-    { id: 1, name: "Field 1", location: "City Center", price: "$20/hr", available: true },
-    { id: 2, name: "Court 2", location: "North Park", price: "$25/hr", available: false },
-    { id: 3, name: "Arena 3", location: "West Side", price: "$30/hr", available: true },
   ];
 
   // 🔔 Recent Activity
@@ -144,13 +163,13 @@ const Overview: React.FC = () => {
               <div key={pg.id} className="border rounded-lg p-4 shadow-sm bg-gray-50">
                 <h4 className="font-semibold text-gray-800">{pg.name}</h4>
                 <p className="text-sm text-gray-600">{pg.location}</p>
-                <p className="text-sm text-gray-700">{pg.price}</p>
+                <p className="text-sm text-gray-700">{pg.price_per_hour}</p>
                 <span
                   className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${
-                    pg.available ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    pg.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {pg.available ? "Available" : "Unavailable"}
+                  {pg.is_active ? "Available" : "Unavailable"}
                 </span>
               </div>
             ))}
