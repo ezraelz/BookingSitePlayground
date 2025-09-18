@@ -11,6 +11,7 @@ import Contact from "../components/public/pages/contact";
 import SignIn from "../components/public/pages/signin";
 import SignUp from "../components/public/pages/signup";
 import SignOut from "../components/public/pages/signout";
+import Timetable from "../components/public/pages/timetable";
 
 const PublicRoutes = () => {
   return (
@@ -20,7 +21,7 @@ const PublicRoutes = () => {
         <Route path="booking" element={<Booking />} />
         <Route path="services" element={<Services />} />
         <Route path="contact" element={<Contact />} />
-        <Route path="blog" element={<Blog />} />
+        <Route path="schedules" element={<Timetable />} />
         <Route path="subscribe" element={<Subscribe />} />
         <Route path="login" element={<SignIn />} />
         <Route path="signup" element={<SignUp />} />

@@ -45,8 +45,9 @@ const Nav = () => {
     { name: 'About Us', path: '/about' },
     { name: 'Booking', path: '/booking' },
     { name: 'Services', path: '/services' },
+    { name: 'Schedules', path: '/schedules' },
     { name: 'Contact', path: '/contact' },
-    { name: role === 'admin' ? 'Dashboard' : subscribed ? "Unsubscribe" : 'Subscribe', path: role === 'admin' ? '/dashboard' : subscribed ? '/unsubscribed' : '/subscribe' },
+    { name: role === 'admin' ? 'Dashboard' : '', path: role === 'admin' ? '/dashboard' : '' },
   ];
 
   return (
