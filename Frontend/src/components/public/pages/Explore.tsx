@@ -6,6 +6,8 @@ import { Button } from '../../../components/ui/Button';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { FieldCard } from '../../../components/fields/FieldCard';
 import type { FieldDTO, Sport } from '../../../lib/types';
+import { toast } from 'react-toastify';
+import axios from '../../../hooks/api';
 
 export function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,6 +33,22 @@ export function Explore() {
     setSearchParams(params);
   }, [filters, setSearchParams]);
 
+  useEffect(() => {
+    const fetchFields = async () => {
+      try {
+        const res = await axios.get("/fields/");
+        setFields(res.data);
+        console.log('field', fields);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load playgrounds");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFields();
+  })
   const handleReserve = (field: FieldDTO) => {
     const params = new URLSearchParams({
       fieldId: field.id.toString(),
