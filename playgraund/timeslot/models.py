@@ -1,12 +1,17 @@
 from django.db import models
-from field.models import Field
 
 class Timeslot(models.Model):
-    field = models.ForeignKey(Field, verbose_name=("Field"), on_delete=models.CASCADE, null=True, blank=True)
-    start_time = models.TimeField(("Start Time"), auto_now=False, auto_now_add=False)
-    end_time = models.TimeField(("End Time"), auto_now=False, auto_now_add=False)
-    is_booked = models.BooleanField(("Is Booked"), null=True, blank=True)
+    start_time = models.TimeField()
+    end_time   = models.TimeField()
+    is_active  = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["start_time", "end_time"], name="uniq_timeslot_start_end"
+            )
+        ]
+        ordering = ["start_time", "end_time"]
 
     def __str__(self):
-        return f"{self.start_time} {self.end_time}"
-    
+        return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"

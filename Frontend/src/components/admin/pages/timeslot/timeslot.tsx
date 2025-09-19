@@ -5,41 +5,49 @@ import {
   PencilSquareIcon,
   TrashIcon,
   ClockIcon,
-  CurrencyDollarIcon,
   ArrowsRightLeftIcon,
+  PowerIcon,
 } from "@heroicons/react/24/outline";
 import axios from "../../../../hooks/api";
 
-interface Timeslot {
+/** =========================
+ * Types (match backend)
+ * ========================= */
+interface TimeslotRow {
   id: number;
-  start_time: string;
-  end_time: string;
-  price_per_hour: number;
-  status: "available" | "booked";
+  start_time: string;  // "HH:MM" or "HH:MM:SS"
+  end_time: string;    // "HH:MM" or "HH:MM:SS"
+  is_active: boolean;
 }
 
-const Timeslot: React.FC = () => {
-  const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+/** The select UI uses string union; we map it to boolean is_active */
+type SlotState = "active" | "inactive";
+
+/** =========================
+ * Component
+ * ========================= */
+const TimeslotManager: React.FC = () => {
+  const [timeslots, setTimeslots] = useState<TimeslotRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+
   const [form, setForm] = useState({
     start_time: "",
     end_time: "",
-    price_per_hour: "",
-    status: "available" as "available" | "booked",
+    state: "active" as SlotState, // maps to is_active
   });
 
   useEffect(() => {
-    fetchTimeslots();
+    fetchAll();
   }, []);
 
-  const fetchTimeslots = async () => {
+  const fetchAll = async () => {
     try {
       setLoading(true);
-      const timeslotRes = await axios.get('/timeslot/');
-      setTimeslots(timeslotRes.data);
+      const res = await axios.get("/timeslot/");
+      setTimeslots(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      toast.error('Failed to fetch timeslots.');
+      toast.error("Failed to fetch timeslots.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -48,81 +56,98 @@ const Timeslot: React.FC = () => {
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  ) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const endAfterStart = (start: string, end: string) => {
+    const toMinutes = (t: string) => {
+      const [h = "0", m = "0"] = t.split(":");
+      return Number(h) * 60 + Number(m);
+    };
+    return toMinutes(end) > toMinutes(start);
   };
+
+  const toIsActive = (state: SlotState) => state === "active";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form.start_time || !form.end_time) {
+      toast.error("Please enter both start and end times.");
+      return;
+    }
+    if (!endAfterStart(form.start_time, form.end_time)) {
+      toast.error("End time must be after start time.");
+      return;
+    }
+
+    const payload = {
+      start_time: form.start_time,
+      end_time: form.end_time,
+      is_active: toIsActive(form.state),
+    };
+
     try {
       if (editingId) {
-        await axios.put(`/timeslot/${editingId}/`, form);
-        toast.success('Timeslot updated successfully');
+        await axios.put(`/timeslot/${editingId}/`, payload);
+        toast.success("Timeslot updated successfully");
         setEditingId(null);
       } else {
-        await axios.post(`/timeslot/`, form);
-        toast.success('Timeslot added successfully');
+        await axios.post(`/timeslot/`, payload);
+        toast.success("Timeslot added successfully");
       }
-      setForm({
-        start_time: "",
-        end_time: "",
-        price_per_hour: "",
-        status: "available",
-      });
-      fetchTimeslots();
-    } catch (err) {
-      toast.error(editingId ? 'Failed to update timeslot.' : 'Failed to add timeslot.');
+      setForm({ start_time: "", end_time: "", state: "active" });
+      fetchAll();
+    } catch (err: any) {
+      const msg =
+        err?.response?.data
+          ? JSON.stringify(err.response.data)
+          : (editingId ? "Failed to update timeslot." : "Failed to add timeslot.");
+      toast.error(msg);
       console.error(err);
     }
   };
 
-  const handleEdit = (timeslot: Timeslot) => {
+  const handleEdit = (slot: TimeslotRow) => {
+    const cut = (t: string) => (t?.length >= 5 ? t.slice(0, 5) : t || "");
     setForm({
-      start_time: timeslot.start_time,
-      end_time: timeslot.end_time,
-      price_per_hour: timeslot.price_per_hour.toString(),
-      status: timeslot.status,
+      start_time: cut(slot.start_time),
+      end_time: cut(slot.end_time),
+      state: slot.is_active ? "active" : "inactive",
     });
-    setEditingId(timeslot.id);
+    setEditingId(slot.id);
   };
 
   const handleCancelEdit = () => {
-    setForm({
-      start_time: "",
-      end_time: "",
-      price_per_hour: "",
-      status: "available",
-    });
+    setForm({ start_time: "", end_time: "", state: "active" });
     setEditingId(null);
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this timeslot?')) {
-      try {
-        await axios.delete(`/timeslot/${id}/`);
-        toast.success('Timeslot deleted successfully');
-        fetchTimeslots();
-      } catch (err) {
-        toast.error('Failed to delete timeslot.');
-        console.error(err);
-      }
+    if (!window.confirm("Delete this timeslot?")) return;
+    try {
+      await axios.delete(`/timeslot/${id}/`);
+      toast.success("Timeslot deleted successfully");
+      fetchAll();
+    } catch (err) {
+      toast.error("Failed to delete timeslot.");
+      console.error(err);
     }
   };
 
   const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
-    const hour = parseInt(hours);
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const formattedHour = hour % 12 || 12;
-    return `${formattedHour}:${minutes} ${period}`;
+    const [hStr = "0", m = "00"] = timeString.split(":");
+    const h = Number(hStr);
+    const period = h >= 12 ? "PM" : "AM";
+    const twelve = h % 12 || 12;
+    return `${twelve}:${m} ${period}`;
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Timeslot Management</h1>
-        <p className="text-gray-600 mt-2">Create and manage available booking timeslots</p>
+        <p className="text-gray-600 mt-2">Create and manage available timeslots</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -131,22 +156,21 @@ const Timeslot: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-semibold text-gray-900">All Timeslots</h2>
             <span className="text-sm text-gray-500">
-              {timeslots.length} {timeslots.length === 1 ? 'timeslot' : 'timeslots'}
+              {timeslots.length} {timeslots.length === 1 ? "timeslot" : "timeslots"}
             </span>
           </div>
 
           {loading ? (
-            // Loading skeleton
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="animate-pulse flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-20"></div>
-                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    <div className="h-4 bg-gray-200 rounded w-28" />
+                    <div className="h-3 bg-gray-200 rounded w-20" />
                   </div>
                   <div className="flex space-x-2">
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16" />
+                    <div className="h-8 bg-gray-200 rounded w-16" />
                   </div>
                 </div>
               ))}
@@ -159,27 +183,22 @@ const Timeslot: React.FC = () => {
                   className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center flex-wrap gap-4">
                       <div className="flex items-center space-x-1 text-gray-600">
                         <ClockIcon className="w-4 h-4" />
                         <span className="font-medium">{formatTime(slot.start_time)}</span>
                         <ArrowsRightLeftIcon className="w-3 h-3 mx-1" />
                         <span className="font-medium">{formatTime(slot.end_time)}</span>
                       </div>
-                      <div className="flex items-center space-x-1 text-gray-600">
-                        <CurrencyDollarIcon className="w-4 h-4" />
-                        <span>${slot.price_per_hour}</span>
-                      </div>
                     </div>
                     <div className="mt-2">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          slot.status === "available"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium inline-flex items-center gap-1 ${
+                          slot.is_active ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-800"
                         }`}
                       >
-                        {slot.status}
+                        <PowerIcon className="w-3.5 h-3.5" />
+                        {slot.is_active ? "Active" : "Inactive"}
                       </span>
                     </div>
                   </div>
@@ -214,14 +233,14 @@ const Timeslot: React.FC = () => {
         {/* Add/Edit Timeslot Form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">
-            {editingId ? 'Edit Timeslot' : 'Add New Timeslot'}
+            {editingId ? "Edit Timeslot" : "Add New Timeslot"}
           </h2>
+
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Times */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                 <input
                   type="time"
                   name="start_time"
@@ -232,9 +251,7 @@ const Timeslot: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
                 <input
                   type="time"
                   name="end_time"
@@ -246,35 +263,17 @@ const Timeslot: React.FC = () => {
               </div>
             </div>
 
+            {/* Active/Inactive */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price ($)
-              </label>
-              <input
-                type="number"
-                name="price_per_hour"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                value={form.price_per_hour}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
               <select
-                name="status"
-                value={form.status}
+                name="state"
+                value={form.state}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="available">Available</option>
-                <option value="booked">Booked</option>
+                <option value="active">Active (bookable)</option>
+                <option value="inactive">Inactive (hidden/disabled)</option>
               </select>
             </div>
 
@@ -284,9 +283,9 @@ const Timeslot: React.FC = () => {
                 className="flex items-center justify-center bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex-1"
               >
                 <PlusCircleIcon className="w-5 h-5 mr-2" />
-                {editingId ? 'Update Timeslot' : 'Add Timeslot'}
+                {editingId ? "Update Timeslot" : "Add Timeslot"}
               </button>
-              
+
               {editingId && (
                 <button
                   type="button"
@@ -299,13 +298,12 @@ const Timeslot: React.FC = () => {
             </div>
           </form>
 
-          {/* Form Help Text */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-800 mb-2">Tips</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Ensure end time is after start time</li>
-              <li>• Set appropriate pricing for different time slots</li>
-              <li>• Mark as "Booked" for maintenance or unavailable periods</li>
+              <li>• Enter start and end time in 24h format</li>
+              <li>• End time must be after start time</li>
+              <li>• Set state to Inactive to disable the slot globally</li>
             </ul>
           </div>
         </div>
@@ -314,4 +312,4 @@ const Timeslot: React.FC = () => {
   );
 };
 
-export default Timeslot;
+export default TimeslotManager;

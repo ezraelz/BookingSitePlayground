@@ -1,751 +1,619 @@
 import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import type { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from "axios";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
-import axios from "axios"; // Adjust import based on your setup
 
+/* ===========================
+   Config & Debug Helpers
+=========================== */
+const DEBUG = true;
+const BASE_URL = "http://127.0.0.1:8000";
+
+const log = {
+  info: (...args: any[]) => DEBUG && console.info("[booking]", ...args),
+  warn: (...args: any[]) => DEBUG && console.warn("[booking]", ...args),
+  error: (...args: any[]) => console.error("[booking]", ...args),
+  group: (label: string) => DEBUG && console.group(`[booking] ${label}`),
+  groupEnd: () => DEBUG && console.groupEnd(),
+  table: (data: any) => DEBUG && console.table?.(data),
+};
+
+const api = axios.create({ baseURL: BASE_URL, withCredentials: false });
+
+/* Interceptors (nice grouped console logs) */
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    log.group(`REQUEST ${config.method?.toUpperCase()} ${config.baseURL || ""}${config.url}`);
+    log.info("Headers:", config.headers);
+    log.info("Params:", (config as any).params);
+    log.info("Data:", (config as any).data);
+    log.groupEnd();
+    return config;
+  },
+  (error: AxiosError) => {
+    log.error("REQUEST ERROR:", error);
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (res: AxiosResponse) => {
+    log.group(`RESPONSE ${res.config.method?.toUpperCase()} ${res.config.url} → ${res.status}`);
+    log.info("Data:", res.data);
+    log.groupEnd();
+    return res;
+  },
+  (error: AxiosError) => {
+    const status = error.response?.status;
+    log.group(`RESPONSE ERROR ${error.config?.method?.toUpperCase()} ${error.config?.url} → ${status}`);
+    log.error("Error message:", error.message);
+    log.error("Response data:", error.response?.data);
+    log.error("Headers:", error.response?.headers);
+    log.groupEnd();
+    return Promise.reject(error);
+  }
+);
+
+/* ===========================
+   Types
+=========================== */
 type Sport = "football" | "basketball" | "tennis";
-type PlanType = "single" | "1m" | "3m" | "6m";
+type PlanType = "1m" | "3m" | "6m";
 
-interface Field {
+interface FieldRow {
   id: number;
   name: string;
-  location: string;
-  price_per_hour: string; // Backend returns string
-  image: string | null;
-  is_active: boolean;
-  sport?: Sport;
+  type?: Sport | string;
+  price_per_session?: string | number;
+  price_per_hour?: string | number;
+  is_active?: boolean;
+  location?: string;
+  image?: string | null;
 }
 
-interface Timeslot {
+interface TimeslotRow {
   id: number;
-  start_time: string; // e.g., "12:00"
-  end_time: string; // e.g., "14:00"
-  is_active: boolean;
-}
-
-interface BookingSlot {
-  date: string;
-  time_slot: number;
-  field: number;
-  status: "available" | "booked" | "selected";
   start_time: string;
   end_time: string;
+  sequence?: number;
+  status?: string;
+  created_at?: string;
+  price_per_hour?: string | number;
 }
 
-const Booking: React.FC = () => {
-  // State
-  const [sport, setSport] = useState<Sport>("football");
-  const [fields, setFields] = useState<Field[]>([]);
-  const [selectedField, setSelectedField] = useState<string>("");
-  const [date, setDate] = useState<Date | null>(new Date());
-  const [availableSlots, setAvailableSlots] = useState<Timeslot[]>([]);
-  const [selectedTimeslot, setSelectedTimeslot] = useState<string>("");
-  const [plan, setPlan] = useState<PlanType>("single");
-  const [durationHours, setDurationHours] = useState<number>(1);
-  const [viewMode, setViewMode] = useState<"form" | "timetable">("form");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
-  const [availabilityData, setAvailabilityData] = useState<BookingSlot[]>([]);
-  const [selectedSlots, setSelectedSlots] = useState<BookingSlot[]>([]);
-  const [formData, setFormData] = useState({
-    guest_name: "",
-    guest_email: "",
-    guest_phone: "",
-    notes: "",
-    playground: 0,
-    date: "",
-    time_slot: 0,
-    duration: 1,
-  });
+type SlotStatus = "available" | "booked" | "closed";
+type AnyAvailabilityRow =
+  | { id?: number; status?: SlotStatus; label?: string; start_time?: string; end_time?: string }
+  | string;
 
-  // Fetch fields and timeslots on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [fieldsRes, timeslotsRes] = await Promise.all([
-          axios.get<Field[]>("/fields/"),
-          axios.get<Timeslot[]>("/timeslot/"),
-        ]);
-        setFields(Array.isArray(fieldsRes.data) ? fieldsRes.data : []);
-        setAvailableSlots(
-          Array.isArray(timeslotsRes.data)
-            ? timeslotsRes.data.filter((ts) => ts.is_active !== false)
-            : []
-        );
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        toast.error("Failed to load booking data");
+interface StartCheckoutResponse {
+  checkout_url: string;
+  tx_ref: string;
+  occurrences: number;
+  amount_etb: string;
+  series: any;
+}
+
+/* ===========================
+   Helpers
+=========================== */
+const monthsForPlan: Record<PlanType, number> = { "1m": 1, "3m": 3, "6m": 6 };
+
+/** JS getDay(): Sun=0..Sat=6 → Python weekday(): Mon=0..Sun=6 */
+const jsToPythonWeekday = (jsDay: number) => (jsDay + 6) % 7;
+
+const cutHHMM = (t: string) => (t?.length >= 5 ? t.slice(0, 5) : t || "");
+const timeKey = (startHHMM: string, endHHMM: string) => `${startHHMM}-${endHHMM}`;
+const makeLabel = (start: string, end: string) => `${cutHHMM(start)} - ${cutHHMM(end)}`;
+
+/** Prefer WITH trailing slash first to avoid Django APPEND_SLASH redirect on POST */
+const buildVariants = (paths: string[]) => {
+  const s = new Set<string>();
+  for (const p of paths) {
+    const withSlash = p.endsWith("/") ? p : `${p}/`;
+    const noSlash = p.endsWith("/") ? p.slice(0, -1) : p;
+    s.add(withSlash);
+    s.add(noSlash);
+  }
+  return Array.from(s);
+};
+
+async function getFirstOk<T>(paths: string[], params?: Record<string, any>) {
+  const variants = buildVariants(paths);
+  let lastErr: any = null;
+  for (const p of variants) {
+    try {
+      log.group(`GET TRY ${p}`);
+      log.info("Params:", params ?? {});
+      const res = await api.get<T>(p, { params });
+      log.info("OK:", res.status);
+      log.groupEnd();
+      return res.data;
+    } catch (e: any) {
+      lastErr = e;
+      const s = e?.response?.status;
+      log.warn(`GET FAIL ${p} →`, s);
+      if (s === 404 || s === 301 || s === 302) {
+        log.groupEnd();
+        continue;
       }
-    };
-    fetchData();
+      log.groupEnd();
+      throw e;
+    }
+  }
+  throw lastErr || new Error(`No matching GET endpoint for: ${paths.join(", ")}`);
+}
+
+async function postFirstOk<T>(paths: string[], body: any) {
+  const variants = buildVariants(paths);
+  let lastErr: any = null;
+  for (const p of variants) {
+    try {
+      log.group(`POST TRY ${p}`);
+      log.info("Body:", body);
+      const res = await api.post<T>(p, body);
+      log.info("OK:", res.status);
+      log.groupEnd();
+      return res.data;
+    } catch (e: any) {
+      const s = e?.response?.status;
+      log.warn(`POST FAIL ${p} →`, s);
+      if (s === 404 || s === 301 || s === 302) {
+        log.groupEnd();
+        continue;
+      }
+      const payload = e?.response?.data ?? e;
+      log.groupEnd();
+      throw payload; // bubble raw DRF errors
+    }
+  }
+  throw lastErr || new Error(`No matching POST endpoint for: ${paths.join(", ")}`);
+}
+
+async function getListEither<T>(paths: string[]): Promise<T[]> {
+  const data = await getFirstOk<T[] | { results?: T[] }>(paths);
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray((data as any).results)) return (data as any).results;
+  return [];
+}
+
+/* Endpoints (with slash first) */
+const FIELD_PATHS = ["/fields/", "/field/"];
+const TIMESLOT_PATHS = ["/timeslot/", "/timeslots/"];
+const AVAILABILITY_PATHS = ["/availability/", "/booking/availability/", "/api/booking/availability/"];
+const CHECKOUT_PATHS = ["/series/start-checkout/", "/booking/series/start-checkout/"];
+
+/* ===========================
+   Component
+=========================== */
+const FieldSeriesBookingPage: React.FC = () => {
+  const [fields, setFields] = useState<FieldRow[]>([]);
+  const [timeslots, setTimeslots] = useState<TimeslotRow[]>([]);
+  const [sport, setSport] = useState<Sport | "all">("all");
+
+  const [selectedFieldId, setSelectedFieldId] = useState<number | "">("");
+  const [date, setDate] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
+
+  const [availabilityRaw, setAvailabilityRaw] = useState<AnyAvailabilityRow[]>([]);
+  const [loadingAvail, setLoadingAvail] = useState(false);
+
+  const [selectedTimeslotId, setSelectedTimeslotId] = useState<number | "">("");
+
+  // guest details
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+
+  const [plan, setPlan] = useState<PlanType>("1m");
+  const [submitting, setSubmitting] = useState(false);
+
+  /* Load fields + timeslots */
+  useEffect(() => {
+    (async () => {
+      try {
+        const [flds, tslots] = await Promise.all([
+          getListEither<FieldRow>(FIELD_PATHS),
+          getListEither<TimeslotRow>(TIMESLOT_PATHS),
+        ]);
+
+        const cleanFields = flds.filter((f) => f.is_active !== false);
+        const cleanSlots = tslots
+          .map((t) => ({
+            ...t,
+            sequence:
+              typeof t.sequence === "number"
+                ? t.sequence
+                : Number(cutHHMM(t.start_time).slice(0, 2)) * 60 +
+                  Number(cutHHMM(t.start_time).slice(3, 5)),
+          }))
+          .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+
+        log.group("INIT LOAD");
+        log.table(cleanFields);
+        log.table(cleanSlots);
+        log.groupEnd();
+
+        setFields(cleanFields);
+        setTimeslots(cleanSlots);
+      } catch (e) {
+        log.error("Init load failed:", e);
+        toast.error("Failed to load fields or timeslots");
+      }
+    })();
   }, []);
 
-  // Fetch availability when field or date changes
+  /* Filter by sport (optional) */
+  const filteredFields = useMemo(() => {
+    const out = sport === "all" ? fields : fields.filter((f) => (f.type ? f.type === sport : true));
+    DEBUG && log.info("Filtered fields →", out.length);
+    return out;
+  }, [fields, sport]);
+
+  const selectedField = useMemo(
+    () => fields.find((f) => f.id === Number(selectedFieldId)),
+    [fields, selectedFieldId]
+  );
+
+  /* Load availability for a (field,date) */
   useEffect(() => {
     const fetchAvailability = async () => {
-      if (!selectedField || !date) {
-        setAvailableSlots([]);
-        setSelectedTimeslot("");
-        setAvailabilityData([]);
+      if (!selectedFieldId || !date) {
+        setAvailabilityRaw([]);
+        setSelectedTimeslotId("");
         return;
       }
-      setIsLoadingAvailability(true);
+      setLoadingAvail(true);
       try {
-        const dateStr = format(date, "yyyy-MM-dd");
-        const res = await axios.get<BookingSlot[]>("/availability/", {
-          params: { field: selectedField, date: dateStr },
-        });
-        setAvailabilityData(Array.isArray(res.data) ? res.data : []);
-        const activeSlots = res.data
-          .filter((slot) => slot.status === "available")
-          .map((slot) => ({
-            id: slot.time_slot,
-            start_time: slot.start_time,
-            end_time: slot.end_time,
-            is_active: true,
-          }));
-        setAvailableSlots(activeSlots);
-        if (
-          selectedTimeslot &&
-          !activeSlots.some((ts) => String(ts.id) === selectedTimeslot)
-        ) {
-          setSelectedTimeslot("");
+        const data = await getFirstOk<
+          AnyAvailabilityRow[] | { available?: Record<string, string[]> }
+        >(AVAILABILITY_PATHS, { field_id: selectedFieldId, date });
+
+        let rows: AnyAvailabilityRow[] = [];
+        if (Array.isArray(data)) {
+          rows = data;
+        } else if (data && typeof data === "object" && (data as any).available) {
+          const labels = (data as any).available?.[date] ?? [];
+          rows = labels.map((label: string) => ({ label, status: "available" }));
         }
-      } catch (err) {
-        console.error("Error fetching availability:", err);
-        toast.error("Failed to load availability data");
-        // Fallback: Mock availability
-        const mockData: BookingSlot[] = availableSlots.map((slot) => ({
-          date: format(date, "yyyy-MM-dd"),
-          time_slot: slot.id,
-          field: Number(selectedField),
-          status: Math.random() > 0.5 ? "available" : "booked",
-          start_time: slot.start_time,
-          end_time: slot.end_time,
-        }));
-        setAvailabilityData(mockData);
-        setAvailableSlots(availableSlots); // Keep existing slots as fallback
+
+        log.group("AVAILABILITY RAW");
+        log.info("Field:", selectedFieldId, "Date:", date);
+        log.table(rows);
+        log.groupEnd();
+
+        setAvailabilityRaw(rows);
+
+        // keep selection if still available
+        setSelectedTimeslotId((prev) => {
+          if (!prev) return prev;
+          const keyWanted = timeKey(
+            cutHHMM(timeslots.find((t) => t.id === prev)?.start_time || ""),
+            cutHHMM(timeslots.find((t) => t.id === prev)?.end_time || "")
+          );
+          const stillOk = rows.some((r) => {
+            if (typeof r === "string") {
+              const m = r.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
+              if (!m) return false;
+              return timeKey(m[1], m[2]) === keyWanted;
+            }
+            if (r.id && r.id === prev && r.status === "available") return true;
+            if (r.label) {
+              const m = r.label.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
+              if (!m) return false;
+              return timeKey(m[1], m[2]) === keyWanted && r.status === "available";
+            }
+            if (r.start_time && r.end_time) {
+              return (
+                timeKey(cutHHMM(r.start_time), cutHHMM(r.end_time)) === keyWanted &&
+                r.status === "available"
+              );
+            }
+            return false;
+          });
+          DEBUG && log.info("Keep selected slot?", stillOk, "Prev:", prev);
+          return stillOk ? prev : "";
+        });
+      } catch (e) {
+        log.error("Availability load failed:", e);
+        toast.error("Failed to load availability");
+        setAvailabilityRaw([]);
       } finally {
-        setIsLoadingAvailability(false);
+        setLoadingAvail(false);
       }
     };
     fetchAvailability();
-  }, [selectedField, date]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFieldId, date, timeslots.length]);
 
-  // Derived values
-  const selectedFieldObj = useMemo(
-    () => fields.find((f) => String(f.id) === selectedField),
-    [fields, selectedField]
-  );
-
-  const pricePerHour = selectedFieldObj
-    ? Number(selectedFieldObj.price_per_hour || 0)
-    : 0;
-
-  const monthsForPlan: Record<PlanType, number> = {
-    single: 0,
-    "1m": 1,
-    "3m": 3,
-    "6m": 6,
-  };
-
-  const estimatedSessions =
-    plan === "single" ? 1 : 4 * monthsForPlan[plan]; // One session per week
-  const estimatedTotal =
-    plan === "single"
-      ? durationHours * pricePerHour
-      : estimatedSessions * durationHours * pricePerHour;
-
-  // Handlers
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedField(e.target.value);
-    setFormData((prev) => ({ ...prev, playground: Number(e.target.value) }));
-  };
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(e.target.value);
-    setDate(newDate);
-    setFormData((prev) => ({ ...prev, date: e.target.value }));
-  };
-
-  const handleSlotSelection = (slot: BookingSlot) => {
-    if (slot.status !== "available") return;
-    setSelectedSlots((prev) => {
-      const isSelected = prev.some((s) => s.time_slot === slot.time_slot);
-      if (isSelected) {
-        return prev.filter((s) => s.time_slot !== slot.time_slot);
+  /* Build a map key->status from availability */
+  const availabilityIndex = useMemo(() => {
+    const map = new Map<string | number, SlotStatus>();
+    for (const row of availabilityRaw) {
+      if (typeof row === "string") {
+        const m = row.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
+        if (!m) continue;
+        map.set(timeKey(m[1], m[2]), "available");
+        continue;
       }
-      return [
-        ...prev,
-        { ...slot, status: "selected" as const },
-      ];
-    });
-    setSelectedTimeslot(String(slot.time_slot));
-    setFormData((prev) => ({ ...prev, time_slot: slot.time_slot }));
-  };
+      const obj = row as AnyAvailabilityRow;
+      const status = (obj.status as SlotStatus) || "available";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedField) return toast.error("Please choose a field");
-    if (!date) return toast.error("Please pick a date");
-    if (!selectedTimeslot && viewMode === "form")
-      return toast.error("Please choose a timeslot");
-    if (viewMode === "timetable" && selectedSlots.length === 0)
-      return toast.error("Please select at least one timeslot");
+      if (obj.id != null) {
+        map.set(obj.id, status);
+      } else if (obj.label) {
+        const m = obj.label.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
+        if (!m) continue;
+        map.set(timeKey(m[1], m[2]), status);
+      } else if (obj.start_time && obj.end_time) {
+        map.set(timeKey(cutHHMM(obj.start_time), cutHHMM(obj.end_time)), status);
+      }
+    }
+    DEBUG && log.info("availabilityIndex size:", map.size);
+    return map;
+  }, [availabilityRaw]);
 
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        guest_name: formData.guest_name,
-        guest_email: formData.guest_email,
-        guest_phone: formData.guest_phone,
-        notes: formData.notes,
-        sport,
-        playground: Number(selectedField),
-        date: format(date, "yyyy-MM-dd"),
-        time_slot: Number(selectedTimeslot),
-        duration: Number(durationHours),
-        plan_type: plan,
-        months: monthsForPlan[plan],
+  /* Enriched display */
+  const enriched = useMemo(() => {
+    const arr = timeslots.map((t) => {
+      const keyByTime = timeKey(cutHHMM(t.start_time), cutHHMM(t.end_time));
+      const statusById = availabilityIndex.get(t.id) as SlotStatus | undefined;
+      const statusByTime = availabilityIndex.get(keyByTime) as SlotStatus | undefined;
+      const status: SlotStatus = statusById || statusByTime || "closed";
+      return {
+        id: t.id,
+        label: makeLabel(t.start_time, t.end_time),
+        status,
+        start_time: cutHHMM(t.start_time),
+        end_time: cutHHMM(t.end_time),
       };
-      await axios.post("/booking/", payload);
-      toast.success("Booking submitted successfully!");
-      setFormData({
-        guest_name: "",
-        guest_email: "",
-        guest_phone: "",
-        notes: "",
-        playground: 0,
-        date: "",
-        time_slot: 0,
-        duration: 1,
-      });
-      setSelectedTimeslot("");
-      setSelectedSlots([]);
-      setDurationHours(1);
-    } catch (err) {
-      console.error("Booking error", err);
-      toast.error("Something went wrong while booking.");
+    });
+    DEBUG && log.table(arr);
+    return arr;
+  }, [timeslots, availabilityIndex]);
+
+  const pricePerSession = selectedField ? Number(selectedField.price_per_session || 0) : 0;
+  const months = monthsForPlan[plan];
+  const estimatedSessions = 4 * months;
+  const estimatedTotal = pricePerSession * estimatedSessions;
+
+  /* Start checkout (series) */
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFieldId) return toast.error("Choose a field");
+    if (!date) return toast.error("Choose a start date");
+    if (!selectedTimeslotId) return toast.error("Choose a time slot");
+    if (!guestName || !guestEmail || !guestPhone) return toast.error("Fill your info");
+
+    // Compute weekday the way the serializer expects (Mon=0..Sun=6)
+    // Add "T00:00:00" for consistent parsing across timezones.
+    const jsDay = new Date(`${date}T00:00:00`).getDay(); // Sun=0..Sat=6
+    const weekday = jsToPythonWeekday(jsDay);           // Mon=0..Sun=6
+
+    const payload = {
+      playground: Number(selectedFieldId),
+      time_slot: Number(selectedTimeslotId),
+      weekday,                 // ✅ required by your serializer
+      months,
+      start_date: date,
+      guest_name: guestName,
+      guest_email: guestEmail,
+      guest_phone: guestPhone,
+    };
+
+    setSubmitting(true);
+    try {
+      log.group("START CHECKOUT PAYLOAD");
+      log.info(payload);
+      log.groupEnd();
+
+      const data = await postFirstOk<StartCheckoutResponse>(CHECKOUT_PATHS, payload);
+
+      log.group("CHECKOUT RESPONSE");
+      log.info("checkout_url:", data.checkout_url);
+      log.info("tx_ref:", data.tx_ref);
+      log.info("occurrences:", data.occurrences);
+      log.info("amount_etb:", data.amount_etb);
+      log.groupEnd();
+
+      toast.success("Redirecting to payment…");
+      window.location.href = data.checkout_url;
+    } catch (err: any) {
+      log.error("Checkout failed (raw server payload):", err);
+      let msg = "Failed to start checkout";
+      if (typeof err === "string") msg = err;
+      else if (err?.non_field_errors?.length) msg = err.non_field_errors.join("\n");
+      else if (err?.detail) msg = err.detail;
+      else if (err?.weekday?.length) msg = err.weekday.join("\n"); // 👈 surface the 'weekday' error explicitly
+      else if (typeof err === "object") msg = JSON.stringify(err, null, 2);
+      toast.error(msg);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = format(new Date(), "yyyy-MM-dd");
 
+  /* ===========================
+     UI
+  =========================== */
   return (
-    <section className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Book Your Playground
-          </h1>
-          <p className="text-gray-600">
-            Reserve your perfect football field in just a few steps
-          </p>
-        </div>
+    <section className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 py-10 px-4">
+      <div className="max-w-5xl mx-auto">
+        <header className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-gray-800">Reserve Weekly Sessions</h1>
+          <p className="text-gray-600">1 / 3 / 6 months · 2-hour fixed sessions</p>
+        </header>
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex justify-center">
-              <div className="inline-flex rounded-md shadow-sm" role="group">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("form")}
-                  className={`px-6 py-3 text-sm font-medium rounded-l-lg ${
-                    viewMode === "form"
-                      ? "bg-green-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  Standard Booking
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("timetable")}
-                  className={`px-6 py-3 text-sm font-medium rounded-r-lg ${
-                    viewMode === "timetable"
-                      ? "bg-green-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  Timetable View
-                </button>
-              </div>
+        <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-xl p-6 space-y-8">
+          {/* Your Details */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Your Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                placeholder="Full name *"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email *"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                required
+              />
+              <input
+                type="tel"
+                placeholder="Phone *"
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                required
+              />
             </div>
           </div>
-        </div>
 
-        {viewMode === "form" ? (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                    Personal Information
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        name="guest_name"
-                        value={formData.guest_name}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                        required
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email Address *
-                        </label>
-                        <input
-                          type="email"
-                          name="guest_email"
-                          value={formData.guest_email}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                          required
-                          placeholder="your.email@example.com"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone Number *
-                        </label>
-                        <input
-                          type="tel"
-                          name="guest_phone"
-                          value={formData.guest_phone}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                          required
-                          placeholder="+1 234 567 8900"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes
-                      </label>
-                      <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                        placeholder="Any additional notes"
-                      />
-                    </div>
-                  </div>
-                </div>
+          {/* Field & Date */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Choose Field & Start Date</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <select
+                value={sport}
+                onChange={(e) => setSport(e.target.value as Sport | "all")}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="all">All sports</option>
+                <option value="football">Football</option>
+                <option value="basketball">Basketball</option>
+                <option value="tennis">Tennis</option>
+              </select>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                    Booking Details
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Choose Field *
-                      </label>
-                      <select
-                        value={selectedField}
-                        onChange={handleFieldChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                        required
-                      >
-                        <option value="">-- Select a Field --</option>
-                        {fields.map((field) => (
-                          <option key={field.id} value={field.id}>
-                            {field.name} - {field.location} ($
-                            {field.price_per_hour}/hour)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Date *
-                        </label>
-                        <input
-                          type="date"
-                          name="date"
-                          value={formData.date}
-                          onChange={handleDateChange}
-                          min={today}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Time Slot *
-                        </label>
-                        <select
-                          name="time_slot"
-                          value={formData.time_slot}
-                          onChange={(e) => {
-                            handleChange(e);
-                            setSelectedTimeslot(e.target.value);
-                            setFormData((prev) => ({
-                              ...prev,
-                              time_slot: Number(e.target.value),
-                            }));
-                          }}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                          required
-                        >
-                          <option value="">-- Select Time --</option>
-                          {availableSlots.map((time) => (
-                            <option key={time.id} value={time.id}>
-                              {time.start_time} - {time.end_time}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Duration (hours) *
-                      </label>
-                      <div className="flex items-center">
-                        <input
-                          type="range"
-                          name="duration"
-                          min="1"
-                          max="6"
-                          value={formData.duration}
-                          onChange={(e) => {
-                            handleChange(e);
-                            setDurationHours(Number(e.target.value));
-                          }}
-                          className="flex-1 mr-4"
-                        />
-                        <span className="text-lg font-semibold text-green-600 min-w-[30px] text-center">
-                          {formData.duration}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>1h</span>
-                        <span>2h</span>
-                        <span>3h</span>
-                        <span>4h</span>
-                        <span>5h</span>
-                        <span>6h</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <select
+                value={selectedFieldId}
+                onChange={(e) => {
+                  setSelectedFieldId(e.target.value ? Number(e.target.value) : "");
+                  setSelectedTimeslotId("");
+                }}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                required
+              >
+                <option value="">-- Select Field --</option>
+                {filteredFields.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} {f.location ? `- ${f.location}` : ""} (ETB {Number(f.price_per_session ?? 0)})
+                  </option>
+                ))}
+              </select>
 
-                <div className="text-right">
-                  <p className="text-lg font-semibold">
-                    Estimated Total: ${estimatedTotal.toFixed(2)}
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-green-600 text-white py-4 rounded-xl font-semibold shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Processing...
-                    </>
-                  ) : (
-                    "Confirm Booking"
-                  )}
-                </button>
-              </form>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setSelectedTimeslotId("");
+                }}
+                min={today}
+                className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
+                required
+              />
             </div>
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="p-8">
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="guest_name"
-                      value={formData.guest_name}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                      required
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      name="guest_email"
-                      value={formData.guest_email}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                      required
-                      placeholder="your.email@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      name="guest_phone"
-                      value={formData.guest_phone}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                      required
-                      placeholder="+1 234 567 8900"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes
-                  </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                    placeholder="Any additional notes"
-                  />
-                </div>
-              </div>
 
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                  Select Field and Date
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Choose Field *
-                    </label>
-                    <select
-                      value={selectedField}
-                      onChange={handleFieldChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                      required
+          {/* Availability */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Pick Time Slot (2 hours)</h3>
+
+            {!selectedFieldId || !date ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+                Select a field and date to view slots.
+              </div>
+            ) : loadingAvail ? (
+              <div className="flex justify-center items-center h-24">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />
+              </div>
+            ) : timeslots.length === 0 ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                No timeslots configured. Create some timeslots first.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {enriched.map((row) => {
+                  const disabled = row.status !== "available";
+                  const active = selectedTimeslotId === row.id;
+                  return (
+                    <button
+                      key={row.id}
+                      type="button"
+                      onClick={() => !disabled && setSelectedTimeslotId(row.id)}
+                      className={`p-4 rounded-lg border text-center transition ${
+                        disabled
+                          ? "bg-red-100 border-red-300 text-red-700 cursor-not-allowed"
+                          : active
+                          ? "bg-emerald-100 border-emerald-500"
+                          : "bg-emerald-50 border-emerald-300 hover:bg-emerald-100"
+                      }`}
+                      disabled={disabled}
+                      title={row.label}
                     >
-                      <option value="">-- Select a Field --</option>
-                      {fields.map((field) => (
-                        <option key={field.id} value={field.id}>
-                          {field.name} - {field.location} ($
-                          {field.price_per_hour}/hour)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date *
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleDateChange}
-                      min={today}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Duration (hours) *
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="range"
-                        name="duration"
-                        min="1"
-                        max="6"
-                        value={formData.duration}
-                        onChange={(e) => {
-                          handleChange(e);
-                          setDurationHours(Number(e.target.value));
-                        }}
-                        className="flex-1 mr-4"
-                      />
-                      <span className="text-lg font-semibold text-green-600 min-w-[30px] text-center">
-                        {formData.duration}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>1h</span>
-                      <span>2h</span>
-                      <span>3h</span>
-                      <span>4h</span>
-                      <span>5h</span>
-                      <span>6h</span>
-                    </div>
-                  </div>
-                </div>
+                      <div className="font-medium">{row.label}</div>
+                      <div className="text-xs mt-1">
+                        {disabled ? row.status.toUpperCase() : "AVAILABLE"}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+            )}
+          </div>
 
-              {selectedField && formData.date ? (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
-                    Select Time Slots
-                  </h3>
-                  {isLoadingAvailability ? (
-                    <div className="flex justify-center items-center h-40">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-4 flex items-center space-x-4">
-                        <div className="flex items-center">
-                          <div className="w-4 h-4 rounded bg-green-100 mr-2"></div>
-                          <span className="text-sm text-gray-600">
-                            Available
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-4 h-4 rounded bg-red-100 mr-2"></div>
-                          <span className="text-sm text-gray-600">Booked</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="w-4 h-4 rounded bg-blue-100 mr-2"></div>
-                          <span className="text-sm text-gray-600">Selected</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {availabilityData.map((slot) => {
-                          const isSelected = selectedSlots.some(
-                            (s) => s.time_slot === slot.time_slot
-                          );
-                          return (
-                            <div
-                              key={slot.time_slot}
-                              onClick={() => handleSlotSelection(slot)}
-                              className={`p-4 rounded-lg border cursor-pointer text-center transition-all ${
-                                isSelected
-                                  ? "bg-blue-100 border-blue-500"
-                                  : slot.status === "available"
-                                  ? "bg-green-100 border-green-300 hover:bg-green-200"
-                                  : "bg-red-100 border-red-300 cursor-not-allowed"
-                              }`}
-                            >
-                              <div className="font-medium">
-                                {slot.start_time} - {slot.end_time}
-                              </div>
-                              <div className="text-sm mt-1">
-                                {isSelected
-                                  ? "Selected"
-                                  : slot.status === "available"
-                                  ? "Available"
-                                  : "Booked"}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                  <p className="text-yellow-700">
-                    Please select a field and date to view available time slots
-                  </p>
-                </div>
-              )}
+          {/* Plan + pricing */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Plan</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {(["1m", "3m", "6m"] as PlanType[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPlan(p)}
+                    className={`py-3 rounded-lg border font-semibold ${
+                      plan === p ? "bg-emerald-600 text-white border-emerald-600" : "bg-white border-gray-300"
+                    }`}
+                  >
+                    {p.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Weekly session for {monthsForPlan[plan]} month(s).
+              </p>
+            </div>
 
-              <div className="flex justify-between items-center mt-8">
-                <div>
-                  {selectedSlots.length > 0 && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">{selectedSlots.length}</span>{" "}
-                      time slot(s) selected
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || selectedSlots.length === 0}
-                  className="bg-green-600 text-white px-8 py-3 rounded-xl font-semibold shadow-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Processing...
-                    </>
-                  ) : (
-                    `Book ${selectedSlots.length} Slot(s)`
-                  )}
-                </button>
+            <div className="md:col-span-2 text-right">
+              <div className="text-sm text-gray-500">Price per session</div>
+              <div className="text-2xl font-bold">ETB {pricePerSession.toLocaleString()}</div>
+              <div className="text-sm text-gray-500 mt-2">
+                Est. sessions: {estimatedSessions} · Est. total:{" "}
+                <span className="font-semibold">ETB {Number(estimatedTotal).toLocaleString()}</span>
               </div>
             </div>
           </div>
-        )}
+
+          <button
+            type="submit"
+            disabled={submitting || !selectedFieldId || !selectedTimeslotId || !date}
+            className="w-full bg-emerald-600 text-white py-4 rounded-xl font-semibold shadow-md hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+          >
+            {submitting ? "Starting checkout..." : "Proceed to Payment"}
+          </button>
+        </form>
       </div>
     </section>
   );
 };
 
-export default Booking;
+export default FieldSeriesBookingPage;
