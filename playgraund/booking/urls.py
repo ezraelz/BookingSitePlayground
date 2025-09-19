@@ -3,7 +3,8 @@ from .views import (
     BookingDetailView,
     BookingView, 
     BookingAvailabilityView,
-    Revenue, bookings_stats, recent_activities
+    Revenue, bookings_stats, recent_activities,
+    BookingsPermonth
     )
 
 urlpatterns = [
@@ -14,5 +15,7 @@ urlpatterns = [
 
     path("revenue/", Revenue.as_view(), name="revenue"),
     path("bookings/stats/", bookings_stats, name="bookings-stats"),
+    path("bookings/per_month/", BookingsPermonth.as_view(), name="bookings-per_month"),
+
     path("activities/", recent_activities, name="recent-activities"),
 ]

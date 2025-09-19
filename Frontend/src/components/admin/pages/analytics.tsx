@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,10 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { UsersIcon } from "@heroicons/react/24/outline";
+import { toast } from "react-toastify";
+import axios from "../../../hooks/api";
+
+
 
 // Register chart.js components
 ChartJS.register(
@@ -26,13 +30,33 @@ ChartJS.register(
 );
 
 const Analytics: React.FC = () => {
+  const [bookings, setBookings] = useState([]);
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/bookings/per_month/');
+      setBookings(res.data);
+      console.log('bpm', res.data)
+    } catch (error) {
+      toast.error('Failed to fetch bookings.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Sample data
   const bookingsData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: bookings.months,
     datasets: [
       {
         label: "Bookings",
-        data: [12, 19, 10, 15, 20, 25],
+        data: bookings.values,
         borderColor: "#2563eb",
         backgroundColor: "rgba(37, 99, 235, 0.2)",
         fill: true,
