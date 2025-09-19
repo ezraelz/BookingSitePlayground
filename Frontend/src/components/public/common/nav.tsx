@@ -119,20 +119,6 @@ export default function NavBar() {
               </NavLink>
             ))}
 
-            {/* Subscribe / Unsubscribe */}
-            {subscribed ? (
-              <button className="ml-2 inline-flex items-center gap-2 rounded-lg bg-green-500 hover:bg-red-600 px-4 py-2 text-sm font-medium text-white transition">
-                Unsubscribe
-              </button>
-            ) : (
-              <Link
-                to="/subscribe"
-                className="ml-2 inline-flex items-center gap-2 rounded-lg bg-red-500 hover:bg-red-600 px-4 py-2 text-sm font-medium text-white transition"
-              >
-                Subscribe
-              </Link>
-            )}
-
             {/* Login / Signout */}
             <Link
               to={loggedin ? "/signout" : "/login"}
@@ -191,21 +177,6 @@ export default function NavBar() {
                   <span>{label}</span>
                 </NavLink>
               ))}
-
-              {/* Subscribe / Unsubscribe */}
-              {subscribed ? (
-                <button className="flex flex-col items-center gap-1 rounded-lg p-2 text-xs text-white bg-green-500 hover:bg-red-600">
-                  Unsubscribe
-                </button>
-              ) : (
-                <Link
-                  to="/subscribe"
-                  onClick={() => setOpen(false)}
-                  className="flex flex-col items-center gap-1 rounded-lg p-2 text-xs text-white bg-red-500 hover:bg-red-600"
-                >
-                  Subscribe
-                </Link>
-              )}
 
               {/* Sign in/out */}
               <Link
