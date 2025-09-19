@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
-import axios from "axios"; // Adjust import based on your setup
+import axios from "../../../hooks/api"; // Adjust import based on your setup
 
 type Sport = "football" | "basketball" | "tennis";
 type PlanType = "single" | "1m" | "3m" | "6m";

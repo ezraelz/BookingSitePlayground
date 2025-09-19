@@ -49,6 +49,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
 
     
 class BookingAvailabilitySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
     status = serializers.SerializerMethodField()
