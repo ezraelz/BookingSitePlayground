@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   return (
     <div
       className={`bg-gray-800 text-white h-screen fixed top-0 left-0 z-50 transition-all duration-300 flex flex-col overflow-hidden ${
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-16' : 'w-54'
       }`}
     >
       {/* Sidebar Header */}
