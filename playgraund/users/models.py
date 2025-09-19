@@ -30,7 +30,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(("Email"), max_length=254)
     sex = models.CharField(("Sex"), max_length=50)
     age = models.IntegerField(("Age"), default=15)
-    role = models.CharField(verbose_name=("Role"), max_length=50, default='user')
+    role = models.CharField(verbose_name=("Role"), max_length=50, default='user', null=True, blank=True)
     phone_number = models.CharField(("Phone Number"), max_length=50)
     is_guest = models.BooleanField(("Is Guest"), default=True)
     is_staff = models.BooleanField(("Is Staff"), default=False)
