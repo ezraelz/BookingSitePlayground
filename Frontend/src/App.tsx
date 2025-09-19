@@ -15,6 +15,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          {/* public */}
           <Route path='/*' element={<BaseLayout />}>
             <Route path='*' element={<PublicRoutes />} />
           </Route>

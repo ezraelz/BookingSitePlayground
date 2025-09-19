@@ -27,7 +27,6 @@ const Playgrounds: React.FC = () => {
       try {
         const res = await axios.get("/fields/");
         setFields(res.data);
-        console.log('field', fields);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch playgrounds. Please try again later.");
