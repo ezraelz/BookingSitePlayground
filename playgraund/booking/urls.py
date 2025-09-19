@@ -4,7 +4,8 @@ from .views import (
     BookingView, 
     BookingAvailabilityView,
     Revenue, bookings_stats, recent_activities,
-    BookingsPermonth
+    BookingsPermonth, RevenuePerPlayground,
+    BookingsPerUser
     )
 
 urlpatterns = [
@@ -16,6 +17,8 @@ urlpatterns = [
     path("revenue/", Revenue.as_view(), name="revenue"),
     path("bookings/stats/", bookings_stats, name="bookings-stats"),
     path("bookings/per_month/", BookingsPermonth.as_view(), name="bookings-per_month"),
+    path("bookings/per_user/", BookingsPerUser.as_view(), name="bookings-per-user"),
+    path("revenue/per_playground/", RevenuePerPlayground.as_view(), name="revenue-per-playground"),
 
     path("activities/", recent_activities, name="recent-activities"),
 ]

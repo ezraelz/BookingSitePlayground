@@ -336,7 +336,7 @@ const Bookings: React.FC = () => {
                       {booking.status === "pending" && (
                         <>
                           <button
-                            onClick={() => handleStatusChange(booking.id, "confirmed")}
+                            onClick={() => handleStatusChange(booking.id, "approved")}
                             disabled={loadingId === booking.id}
                             className="text-green-600 hover:text-green-900 p-1.5 rounded-md hover:bg-green-50 transition-colors disabled:opacity-50"
                             title="Confirm booking"

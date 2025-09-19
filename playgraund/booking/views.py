@@ -9,6 +9,9 @@ from rest_framework.decorators import api_view
 from .models import Booking
 from .serializers import BookingSerializer, BookingCreateSerializer, BookingAvailabilitySerializer
 from timeslot.models import Timeslot
+from field.models import Field
+from field.serializers import FieldSerializer
+from users.models import Profile
 
 @api_view(["GET"])
 def bookings_stats(request):
@@ -150,3 +153,35 @@ class BookingsPermonth(APIView):
 
         return Response({"months": labels, "values": values}, status=status.HTTP_200_OK)
     
+
+class RevenuePerPlayground(APIView):
+    def get(self, request):
+        playgrounds = Field.objects.all()
+        labels, values = [], []
+
+        # Calculate revenue for each playground
+        for playground in playgrounds:
+            total_revenue = (
+                Booking.objects.filter(playground=playground)
+                .aggregate(total=Sum("playground__price_per_hour"))
+                .get("total") or 0
+            )
+            labels.append(playground.name)
+            values.append(total_revenue)
+
+        return Response({"labels": labels, "values": values}, status=status.HTTP_200_OK)
+    
+class BookingsPerUser(APIView):
+    def get(self, request):
+        booking_counts = (
+            Booking.objects.filter()
+            .values('guest_name')
+            .annotate(total=Count('id'))
+            .order_by('guest_name')
+        )
+
+        # Prepare response data
+        labels = [booking['guest_name'] for booking in booking_counts]
+        values = [booking['total'] for booking in booking_counts]
+
+        return Response({"labels": labels, "values": values}, status=status.HTTP_200_OK)
