@@ -158,7 +158,7 @@ const Timeslot: React.FC = () => {
                   key={slot.id}
                   className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex-1">
+                  <div className="flex-1 overflow-x-auto">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-1 text-gray-600">
                         <ClockIcon className="w-4 h-4" />
