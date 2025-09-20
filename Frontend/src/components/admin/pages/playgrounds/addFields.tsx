@@ -3,36 +3,48 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-// Define TypeScript interface for form state
+// ← Backend fields: name, type, price_per_session, location, image?, is_active
+type SportType = "football" | "tennis" | "basketball";
+
 interface PlaygroundForm {
   name: string;
+  type: SportType;
   location: string;
-  price_per_hour: number;
+  price_per_session: number;
   image: File | null;
-  is_active: boolean; 
+  is_active: boolean;
 }
 
 const AddPlayground: React.FC = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref to reset file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState<PlaygroundForm>({
     name: "",
+    type: "football",
     location: "",
-    price_per_hour: 0,
+    price_per_session: 0,
     image: null,
-    is_active: true, // Default to true (active)
+    is_active: true,
   });
 
-  // Handle text, number, and checkbox inputs
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  // Handle text/number/checkbox/select inputs
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : name === "price_per_hour" ? Number(value) : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : name === "price_per_session"
+          ? Number(value)
+          : value,
     }));
   };
 
-  // Handle file input separately
+  // Handle file input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setForm((prev) => ({ ...prev, image: file }));
@@ -40,39 +52,32 @@ const AddPlayground: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("New field Data:", form);
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append("name", form.name);
-      formData.append("location", form.location);
-      formData.append("price_per_hour", form.price_per_hour.toString());
-      formData.append("is_active", form.is_active.toString()); // Add is_active to FormData
-      if (form.image) {
-        formData.append("image", form.image);
-      }
+      const fd = new FormData();
+      fd.append("name", form.name);
+      fd.append("type", form.type); // must be one of: football/tennis/basketball
+      fd.append("location", form.location);
+      fd.append("price_per_session", form.price_per_session.toString());
+      fd.append("is_active", String(form.is_active));
+      if (form.image) fd.append("image", form.image);
 
-      // Send POST request
-      await axios.post("/fields/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      await axios.post("/fields/", fd);
       toast.success("Playground created successfully!");
 
-      // Reset form
+      // Reset
       setForm({
         name: "",
+        type: "football",
         location: "",
-        price_per_hour: 0,
+        price_per_session: 0,
         image: null,
-        is_active: true, // Reset to default
+        is_active: true,
       });
+      if (fileInputRef.current) fileInputRef.current.value = "";
 
-      // Reset file input UI
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      // Optional: go back to list
+      // navigate(-1);
     } catch (error) {
       console.error("Error creating playground:", error);
       toast.error("Failed to create playground. Please try again.");
@@ -87,6 +92,7 @@ const AddPlayground: React.FC = () => {
       >
         Back
       </button>
+
       <h2 className="text-xl font-bold mb-3">Add New Playground</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,6 +109,21 @@ const AddPlayground: React.FC = () => {
           />
         </div>
 
+        {/* Sport Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Sport Type</label>
+          <select
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            className="mt-1 block w-full border rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="football">Football</option>
+            <option value="tennis">Tennis</option>
+            <option value="basketball">Basketball</option>
+          </select>
+        </div>
+
         {/* Location */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Location</label>
@@ -116,7 +137,7 @@ const AddPlayground: React.FC = () => {
           />
         </div>
 
-        {/* Image */}
+        {/* Image (optional) */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Image</label>
           <input
@@ -124,36 +145,38 @@ const AddPlayground: React.FC = () => {
             name="image"
             onChange={handleFileChange}
             ref={fileInputRef}
-            required
             accept="image/*"
             className="mt-1 block w-full border rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
-        {/* Price per hour */}
+        {/* Price per session (ETB) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Price per hour</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Price per Session (ETB)
+          </label>
           <input
             type="number"
-            name="price_per_hour"
-            value={form.price_per_hour}
+            name="price_per_session"
+            value={form.price_per_session}
             onChange={handleChange}
             required
             min="0"
+            step="0.01"
             className="mt-1 block w-full border rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Is Active</label>
+        {/* Is Active */}
+        <div className="flex items-center gap-2">
           <input
             type="checkbox"
             name="is_active"
             checked={form.is_active}
             onChange={handleChange}
-            className="mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
+          <label className="text-sm font-medium text-gray-700">Active</label>
         </div>
 
         {/* Submit */}

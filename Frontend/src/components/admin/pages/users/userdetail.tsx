@@ -8,7 +8,7 @@ interface User {
   username: string;
   email: string;
   role: string;
-  status: string;
+  is_active: boolean;
   created_at: string;
   last_login: string;
 }
@@ -58,12 +58,12 @@ const UserDetail: React.FC = () => {
           <p className="text-sm text-gray-500">Status</p>
           <span
             className={`px-3 py-1 text-sm rounded-full ${
-              user.status === "Active"
+              user.is_active === true
                 ? "bg-green-100 text-green-600"
                 : "bg-red-100 text-red-600"
             }`}
           >
-            {user.status}
+            {user.is_active === true ? 'Active' : 'InActive'}
           </span>
         </div>
         <div>
